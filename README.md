@@ -1,12 +1,12 @@
 ## Installation
 
-npm `npm i @5alid/schema`
-yarn `yarn add @5alid/schema`
+npm `npm i tiny-schema-validator`
+yarn `yarn add tiny-schema-validator`
 
 ## Usage
 
 ```js
-import createSchema from '@5alidz/schema';
+import createSchema from 'tiny-schema-validator';
 
 const Person = createSchema({
   name: {
