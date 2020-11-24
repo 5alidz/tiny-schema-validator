@@ -1,0 +1,62 @@
+{
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "name": "tiny-schema-validator",
+  "author": "khaled",
+  "module": "dist/tiny-schema-validator.esm.js",
+  "size-limit": [
+    {
+      "path": "dist/tiny-schema-validator.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/tiny-schema-validator.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "resolutions": {
+    "**/typescript": "^4.0.5",
+    "**/@typescript-eslint/eslint-plugin": "^4.6.1",
+    "**/@typescript-eslint/parser": "^4.6.1"
+  },
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^4.9.0",
+    "@typescript-eslint/eslint-plugin": "^4.8.2",
+    "@typescript-eslint/parser": "^4.8.2",
+    "husky": "^4.3.0",
+    "size-limit": "^4.9.0",
+    "tsdx": "^0.14.1",
+    "tslib": "^2.0.3",
+    "typescript": "^4.1.2"
+  }
+}
