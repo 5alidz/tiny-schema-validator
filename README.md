@@ -6,7 +6,7 @@ yarn `yarn add tiny-schema-validator`
 ## Usage
 
 ```js
-import createSchema from 'tiny-schema-validator';
+import { createSchema } from 'tiny-schema-validator';
 
 const Person = createSchema({
   name: {
