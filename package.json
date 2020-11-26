@@ -34,6 +34,9 @@
   },
   "name": "tiny-schema-validator",
   "author": "khaled",
+  "repository": {
+    "url": "https://github.com/5alidz/tiny-schema-validator"
+  },
   "module": "dist/tiny-schema-validator.esm.js",
   "size-limit": [
     {
