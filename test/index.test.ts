@@ -88,18 +88,12 @@ describe('primitive validators only use cases', () => {
   test('returns correct errors when provided with incorrect data', () => {
     expect(
       schema.validate({ name: true, age: create_str(3), isVerified: 0, email: 42 })
-    ).toStrictEqual([
-      { key: 'name', message: 'Invalid Type' },
-      {
-        key: 'email',
-        message: 'Invalid Type',
-      },
-      { key: 'age', message: 'Invalid Type' },
-      {
-        key: 'isVerified',
-        message: 'Invalid Type',
-      },
-    ]); // handles validator types
+    ).toStrictEqual({
+      name: 'Invalid Type',
+      email: 'Invalid Type',
+      age: 'Invalid Type',
+      isVerified: 'Invalid Type',
+    });
 
     expect(
       schema.validate({
@@ -108,22 +102,22 @@ describe('primitive validators only use cases', () => {
         isVerified: false,
         email: 'john.doe@gmail.com',
       })
-    ).toStrictEqual([{ key: 'name', message: 'too long' }]);
+    ).toStrictEqual({ name: 'too long' });
 
     expect(
       schema.validate({ name: 'joe', age: -1, isVerified: true, email: 'john.doe@gmail.com' })
-    ).toStrictEqual([{ key: 'age', message: 'too small' }]);
+    ).toStrictEqual({ age: 'too small' });
 
     expect(
       schema.validate({ name: 'jo', age: -1, isVerified: false, email: 'john.doe@gmail.com' })
-    ).toStrictEqual([
-      { key: 'name', message: 'too short' },
-      { key: 'age', message: 'too small' },
-    ]);
+    ).toStrictEqual({
+      name: 'too short',
+      age: 'too small',
+    });
 
     expect(
       schema.validate({ name: 'john doe', age: 42, isVerified: true, email: 'joh.doe@hotmail.com' })
-    ).toStrictEqual([{ key: 'email', message: 'only gmail' }]);
+    ).toStrictEqual({ email: 'only gmail' });
   });
 });
 
@@ -164,20 +158,21 @@ describe('objects and arrays validators only use cases', () => {
         tags: [create_str(3), create_str(44)],
         metadata: { issat: 'today', expires: 'tomorrow' },
       })
-    ).toStrictEqual([
-      { key: 'metadata["issat"]', message: 'Invalid Type' },
-      { key: 'metadata["expires"]', message: 'Invalid Type' },
-    ]);
+    ).toStrictEqual({
+      metadata: { issat: 'Invalid Type', expires: 'Invalid Type' },
+    });
     expect(
       schema.validate({
         tags: [create_str(3), create_str(44), 42],
         metadata: { issat: 'today', expires: 'tomorrow' },
       })
-    ).toStrictEqual([
-      { key: 'tags[2]', message: 'Invalid Type' },
-      { key: 'metadata["issat"]', message: 'Invalid Type' },
-      { key: 'metadata["expires"]', message: 'Invalid Type' },
-    ]);
+    ).toStrictEqual({
+      tags: { 2: 'Invalid Type' },
+      metadata: {
+        issat: 'Invalid Type',
+        expires: 'Invalid Type',
+      },
+    });
   });
 });
 
@@ -197,15 +192,15 @@ describe('validates and ignores optional keys correctly', () => {
   });
 
   test('validates optional key if found', () => {
-    expect(schema.validate({ example: create_str(2) })).toStrictEqual([
-      { key: 'example', message: 'too short' },
-    ]);
-    expect(schema.validate({ example: create_str(11) })).toStrictEqual([
-      { key: 'example', message: 'too long' },
-    ]);
-    expect(schema.validate({ example: create_str(10, 'L') })).toStrictEqual([
-      { key: 'example', message: 'invalid pattern' },
-    ]);
+    expect(schema.validate({ example: create_str(2) })).toStrictEqual({
+      example: 'too short',
+    });
+    expect(schema.validate({ example: create_str(11) })).toStrictEqual({
+      example: 'too long',
+    });
+    expect(schema.validate({ example: create_str(10, 'L') })).toStrictEqual({
+      example: 'invalid pattern',
+    });
     expect(schema.validate({ example: create_str(10, 'T') })).toBe(null);
   });
 });
