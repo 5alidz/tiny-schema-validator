@@ -1,7 +1,10 @@
+[![GitHub license](https://img.shields.io/github/license/5alidz/tiny-schema-validator)](https://github.com/5alidz/tiny-schema-validator/blob/master/LICENSE)
+
 ## Installation
 
-npm `npm i tiny-schema-validator`
-yarn `yarn add tiny-schema-validator`
+`npm i tiny-schema-validator`
+or
+`yarn add tiny-schema-validator`
 
 ## Basic usage
 
