@@ -135,6 +135,7 @@ type StringValidator = {
   optional?: boolean;
   minLength?: [value: number, errorMessage: string];
   maxLength?: [value: number, errorMessage: string];
+  pattern?: [RegExp, string];
 }
 
 type NumberValidator = {
