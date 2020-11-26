@@ -35,12 +35,8 @@ export const Person = createSchema({
     of: {
       type: 'object',
       shape: {
-        name: {
-          type: 'string',
-        },
-        animal: {
-          type: 'string',
-        },
+        name: { type: 'string' },
+        animal: { type: 'string' },
       },
     },
   },
