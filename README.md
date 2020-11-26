@@ -21,7 +21,7 @@ import { createSchema } from 'tiny-schema-validator';
 export const Person = createSchema({
   name: {
     type: 'string',
-    minLength: [5, 'name is to short'],
+    minLength: [5, 'name is too short'],
     maxLength: [20, 'name is too long'],
   },
   age: {
