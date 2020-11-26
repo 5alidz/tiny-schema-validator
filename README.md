@@ -141,8 +141,8 @@ type StringValidator = {
 type NumberValidator = {
   type: 'number';
   optional?: boolean;
-  max?: [number, string];
-  min?: [number, string];
+  max?: [value: number, errorMessage: string];
+  min?: [value: number, errorMessage: string];
 }
 
 type BooleanValidator = {
