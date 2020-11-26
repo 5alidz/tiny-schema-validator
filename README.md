@@ -2,9 +2,15 @@
 
 ## Installation
 
-`npm i tiny-schema-validator`
+```sh
+npm i tiny-schema-validator
+```
+
 or
-`yarn add tiny-schema-validator`
+
+```sh
+yarn add tiny-schema-validator
+```
 
 ## Basic usage
 
