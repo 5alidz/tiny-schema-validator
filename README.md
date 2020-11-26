@@ -71,3 +71,96 @@ try {
   // type errors = {key: string, message: string}[];
 }
 ```
+
+## Compose schemas
+
+```js
+// in ./models/Project
+import { createSchema } from 'tiny-schema-validator';
+
+export const Project = createSchema({
+  name: { type: 'string' },
+  url: { type: 'string' },
+});
+
+// in ./models/User
+import { createSchema } from 'tiny-schema-validator';
+import { Project } from './Project';
+
+export const User = createSchema({
+  username: { type: 'string' },
+  email: { type: 'string' },
+  projects: {
+    type: 'array',
+    of: Project.createObjectValidator(), // embeds project schema
+  },
+});
+```
+
+## Custom types
+
+```js
+// in ./models/customTypes
+export const email = ({ optional = false }) => ({
+  type: 'string',
+  pattern: [/.+@company\.com/, 'only `company` emails will pass the validation'],
+  optional,
+});
+
+export const tags = ({ optional = false }) => ({
+  type: 'array',
+  of: {
+    type: 'string',
+    pattern: [/swimming|painting|football|reading/, 'unknown tag'],
+  },
+  optional,
+});
+
+// in ./models/User
+import { createSchema } from 'tiny-schema-validator';
+import { email, tags } from './customTypes';
+
+export const User = createSchema({
+  username: { type: string },
+  email: email(),
+  hobbies: tags(),
+});
+```
+
+## Validators sepc
+
+```typescript
+type StringValidator = {
+  type: 'string';
+  optional?: boolean;
+  minLength?: [value: number, errorMessage: string];
+  maxLength?: [value: number, errorMessage: string];
+}
+
+type NumberValidator = {
+  type: 'number';
+  optional?: boolean;
+  max?: [number, string];
+  min?: [number, string];
+}
+
+type BooleanValidator = {
+  type: 'boolean';
+  optional?: boolean;
+}
+
+type ArrayValidator = {
+  type: 'array';
+  optional?: boolean;
+  of: StringValidator | NumberValidator | BooleanValidator | ArrayValidator | ObjectValidator;
+}
+
+type ObjectValidator = {
+  type: 'object';
+  optional?: boolean;
+  shape: {
+    [key: string]: StringValidator | NumberValidator | BooleanValidator | ArrayValidator | ObjectValidator;
+  };
+}
+
+```
