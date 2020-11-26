@@ -7,15 +7,15 @@ interface ValidatorBase {
 
 export interface StringValidator extends ValidatorBase {
   type: 'string';
-  minLength?: number;
-  maxLength?: number;
-  pattern?: RegExp;
+  minLength?: [number, string];
+  maxLength?: [number, string];
+  pattern?: [RegExp, string];
 }
 
 export interface NumberValidator extends ValidatorBase {
   type: 'number';
-  max?: number;
-  min?: number;
+  max?: [number, string];
+  min?: [number, string];
 }
 
 export interface BooleanValidator extends ValidatorBase {
@@ -47,24 +47,19 @@ const isValidatorNoop = (value: unknown, validator: Validator) =>
 export function validateString(validator: StringValidator, value: unknown): string | null {
   if (isValidatorNoop(value, validator)) return null;
 
-  if (typeof value != 'string') return `expected string but received ${typeof value}`;
+  if (typeof value != 'string') return `Invalid Type`;
 
-  if (validator.pattern && validator.pattern.test(value) == false)
-    return `expected string to match pattern: ${validator.pattern}`;
+  const [pattern, patterErrMsg] = validator.pattern ? validator.pattern : [];
+  if (pattern && patterErrMsg && pattern.test(value) == false) return patterErrMsg;
 
-  if (
-    validator.minLength &&
-    typeof validator.minLength == 'number' &&
-    value.length < validator.minLength
-  )
-    return `expected string of length > ${validator.minLength}`;
+  const [minLength, minLengthErrMsg] = validator.minLength ? validator.minLength : [];
+  if (minLength && minLengthErrMsg && typeof minLength == 'number' && value.length < minLength)
+    return minLengthErrMsg;
 
-  if (
-    validator.maxLength &&
-    typeof validator.maxLength == 'number' &&
-    value.length > validator.maxLength
-  )
-    return `expected string of length < ${validator.maxLength}`;
+  const [maxLength, maxLengthErrMsg] = validator.maxLength ? validator.maxLength : [];
+
+  if (maxLength && maxLengthErrMsg && typeof maxLength == 'number' && value.length > maxLength)
+    return maxLengthErrMsg;
 
   return null;
 }
@@ -72,15 +67,15 @@ export function validateString(validator: StringValidator, value: unknown): stri
 export function validateNumber(validator: NumberValidator, value: unknown): string | null {
   if (isValidatorNoop(value, validator)) return null;
 
-  if (typeof value != 'number') return `expected number but received ${typeof value}`;
+  if (typeof value != 'number') return `Invalid Type`;
 
-  if (isNaN(value)) return `expected number but received NaN`;
+  if (isNaN(value)) return `Invalid Type`;
 
-  if (typeof validator.min == 'number' && !isNaN(validator.min) && value < validator.min)
-    return `expected number to be > ${validator.min}`;
+  const [min, minErrMsg] = validator.min ? validator.min : [];
+  if (typeof min == 'number' && minErrMsg && !isNaN(min) && value < min) return minErrMsg;
 
-  if (typeof validator.max == 'number' && !isNaN(validator.max) && value > validator.max)
-    return `expected number to be < ${validator.max}`;
+  const [max, maxErrMsg] = validator.max ? validator.max : [];
+  if (typeof max == 'number' && maxErrMsg && !isNaN(max) && value > max) return maxErrMsg;
 
   return null;
 }
@@ -88,7 +83,7 @@ export function validateNumber(validator: NumberValidator, value: unknown): stri
 export function validateBoolean(validator: BooleanValidator, value: unknown): string | null {
   if (isValidatorNoop(value, validator)) return null;
 
-  if (typeof value != 'boolean') return `expected boolean but received ${typeof value}`;
+  if (typeof value != 'boolean') return `Invalid Type`;
 
   return null;
 }
@@ -99,9 +94,9 @@ export function validateObject(
 ): string | string[] | null {
   if (isValidatorNoop(value, validator)) return null;
 
-  if (!isPlainObject(value)) return `expected object but received ${typeof value}`;
+  if (!isPlainObject(value)) return `Invalid Type`;
 
-  if (!isPlainObject(validator.shape)) return `missing object shape validator`;
+  if (!isPlainObject(validator.shape)) return `Invalid Shape Type`;
 
   const errors: string[] = [];
   const shapeKeys = Object.keys(validator.shape);
@@ -131,9 +126,9 @@ export function validateObject(
 export function validateArray(validator: ArrayValidator, value: unknown): string | string[] | null {
   if (isValidatorNoop(value, validator)) return null;
 
-  if (!Array.isArray(value)) return `expected array but received ${typeof value}`;
+  if (!Array.isArray(value)) return `Invalid Type`;
 
-  if (!validator.of) return `missing array type`;
+  if (!validator.of) return `Missing "of" key`;
 
   const errors: string[] = [];
 

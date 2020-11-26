@@ -3,21 +3,22 @@
 npm `npm i tiny-schema-validator`
 yarn `yarn add tiny-schema-validator`
 
-## Usage
+## Basic usage
 
 ```js
+/* in your models folder you export a schema */
 import { createSchema } from 'tiny-schema-validator';
 
-const Person = createSchema({
+export const Person = createSchema({
   name: {
     type: 'string',
-    minLength: 5,
-    maxLength: 20,
+    minLength: [5, 'name is to short'],
+    maxLength: [20, 'name is too long'],
   },
   age: {
     type: 'number',
-    min: 13,
-    max: 120,
+    min: [13, 'members should be above 13 years old'],
+    max: [200, 'i am not sure you can do this'],
   },
   pets: {
     type: 'array',
@@ -36,21 +37,32 @@ const Person = createSchema({
   },
 });
 
+/* use the schema in your frontend or nodejs code */
+import { Person } from './models/Person';
+
 const errors = Person.validate({
   name: 'John Doe',
   age: 42,
-  pets: [
-    { name: 'fluffy', animal: 'dog' },
-    { name: 'pirate', animal: 'parrot' },
-  ],
+  pets: [{ name: 'pirate', animal: 'parrot' }],
 });
 
-console.log(errors); // -> null
+if (!errors) {
+  // continue doing work safely
+}
+```
 
-const errors2 = Person.validate({
-  name: true,
-  age: '42',
-});
+## Easy way to handle incoming data from any source
 
-console.log(errors2); // -> [ { key: 'name', message: 'expected string but received "boolean"' }, { key: 'age', message: 'expected number but received "string"' }]
+```js
+import { Person } from './models/Person';
+
+const maybeJohn = getPersonByName('John Doe');
+
+try {
+  const john = Person.produce(maybeJohn);
+  // continue doing work safely
+} catch (errors) {
+  // if `maybeJohn` has errors you cant catch here errors type
+  // type errors = {key: string, message: string}[];
+}
 ```

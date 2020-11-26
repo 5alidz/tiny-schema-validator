@@ -14,7 +14,7 @@ function parseMessage(msg: string): [string, string] {
     } else if (part.startsWith('{}')) {
       messagePart.shift();
       const [, , ...id] = part.split('');
-      key += `.${id.join('')}`;
+      key += `["${id.join('')}"]`;
     } else {
       break;
     }
