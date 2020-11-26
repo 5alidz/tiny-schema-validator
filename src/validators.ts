@@ -74,10 +74,12 @@ export function validateNumber(validator: NumberValidator, value: unknown): stri
 
   if (typeof value != 'number') return `expected number but received ${typeof value}`;
 
-  if (validator.min && typeof validator.min == 'number' && value < validator.min)
+  if (isNaN(value)) return `expected number but received NaN`;
+
+  if (typeof validator.min == 'number' && !isNaN(validator.min) && value < validator.min)
     return `expected number to be > ${validator.min}`;
 
-  if (validator.max && typeof validator.max == 'number' && value > validator.max)
+  if (typeof validator.max == 'number' && !isNaN(validator.max) && value > validator.max)
     return `expected number to be < ${validator.max}`;
 
   return null;
