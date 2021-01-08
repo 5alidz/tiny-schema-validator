@@ -1,4 +1,5 @@
 import { createSchema, dynamicObjectKey } from '../src/index';
+import { _ } from '../src/helpers';
 
 // quick and minimal to create strings to be used against stringValidators
 const create_str = (length: number, fill: string = 'T') => {
@@ -235,15 +236,60 @@ describe('correct conversion from schema to ObjectValidator', () => {
   const validator = { name: { type: 'string' } } as const;
   const schema = createSchema(validator);
   test('converts to ObjectValidator', () => {
-    expect(schema.createObjectValidator()).toStrictEqual({
+    expect(schema.toObjectValidator()).toStrictEqual({
       type: 'object',
       shape: validator,
       optional: false,
     });
-    expect(schema.createObjectValidator({ optional: true })).toStrictEqual({
+    expect(schema.toObjectValidator({ optional: true })).toStrictEqual({
       type: 'object',
       shape: validator,
       optional: true,
+    });
+  });
+});
+
+describe('using helpers', () => {
+  const schema = createSchema({
+    first_name: _.string({ minLength: [2, 'name is too short'] }),
+    last_name: _.string({ optional: true, maxLength: [5, 'too long'] }),
+    age: _.number({ min: [13, 'too young'], max: [150, 'too old'] }),
+    pets: _.listOf(_.string({ minLength: [2, 'too short'] }), { optional: true }),
+    friends: _.recordOf(
+      _.record({
+        name: _.string({ minLength: [2, 'too short'] }),
+        age: _.number({ min: [13, 'too young'], max: [150, 'too old'] }),
+      }),
+      { optional: true }
+    ),
+  });
+
+  test('schema use case', () => {
+    expect(schema.validate({ first_name: '5alidz', age: 42 })).toBe(null);
+    expect(schema.validate({ first_name: '5alidz', age: 42, last_name: 'dev' })).toBe(null);
+    expect(schema.validate({ first_name: '5alidz', age: 42, last_name: 42 })).toStrictEqual({
+      last_name: 'Invalid Type',
+    });
+    expect(
+      schema.validate({
+        first_name: '5',
+        age: 11,
+        last_name: '123456',
+        pets: ['fluffy', 'b'],
+        friends: {
+          john: { name: 'John Doe', age: 160 },
+        },
+      })
+    ).toStrictEqual({
+      first_name: 'name is too short',
+      last_name: 'too long',
+      age: 'too young',
+      pets: {
+        '1': 'too short',
+      },
+      friends: {
+        john: { age: 'too old' },
+      },
     });
   });
 });
