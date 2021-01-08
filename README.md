@@ -16,30 +16,18 @@ yarn add tiny-schema-validator
 
 ```js
 /* in your models folder you export a schema */
-import { createSchema } from 'tiny-schema-validator';
+import { createSchema, _ } from 'tiny-schema-validator';
 
 export const Person = createSchema({
-  name: {
-    type: 'string',
+  name: _.string({
     minLength: [5, 'name is too short'],
     maxLength: [20, 'name is too long'],
-  },
-  age: {
-    type: 'number',
+  }),
+  age: _.number({
     min: [13, 'members should be above 13 years old'],
     max: [200, 'i am not sure you can do this'],
-  },
-  pets: {
-    type: 'array',
-    optional: true,
-    of: {
-      type: 'object',
-      shape: {
-        name: { type: 'string' },
-        animal: { type: 'string' },
-      },
-    },
-  },
+  }),
+  pets: _.listOf(_.record({ name: _.string(), animal: _.string() }, { optional: true })),
 });
 
 /* use the schema in your frontend or nodejs code */
@@ -53,6 +41,8 @@ const errors = Person.validate({
 
 if (!errors) {
   // continue doing work safely
+} else {
+  // handle errors
 }
 ```
 
@@ -76,11 +66,11 @@ try {
 
 ```js
 // in ./models/Project
-import { createSchema } from 'tiny-schema-validator';
+import { createSchema, _ } from 'tiny-schema-validator';
 
 export const Project = createSchema({
-  name: { type: 'string' },
-  url: { type: 'string' },
+  name: _.string(),
+  url: _.string(),
 });
 
 // in ./models/User
@@ -88,12 +78,9 @@ import { createSchema } from 'tiny-schema-validator';
 import { Project } from './Project';
 
 export const User = createSchema({
-  username: { type: 'string' },
-  email: { type: 'string' },
-  projects: {
-    type: 'array',
-    of: Project.createObjectValidator(), // embeds project schema
-  },
+  username: _.string(),
+  email: _.string(),
+  projects: _.listOf(Project.toObjectValidator()), // embed Project schema inside User schema
 });
 ```
 
@@ -101,27 +88,25 @@ export const User = createSchema({
 
 ```js
 // in ./models/customTypes
-export const email = ({ optional = false }) => ({
-  type: 'string',
-  pattern: [/.+@company\.com/, 'only `company` emails will pass the validation'],
-  optional,
-});
+import { _ } from 'tiny-schema-validator';
 
-export const tags = ({ optional = false }) => ({
-  type: 'array',
-  of: {
-    type: 'string',
-    pattern: [/swimming|painting|football|reading/, 'unknown tag'],
-  },
-  optional,
-});
+export const email = ({ optional = false }) =>
+  _.string({
+    optional,
+    pattern: [/.+@company\.com/, 'invalid company email'],
+  });
+
+export const tags = ({ optional = false }) =>
+  _.listOf(_.string({ pattern: [/swimming|painting|football|reading/, 'unknown tag'] }), {
+    optional,
+  });
 
 // in ./models/User
-import { createSchema } from 'tiny-schema-validator';
+import { createSchema, _ } from 'tiny-schema-validator';
 import { email, tags } from './customTypes';
 
 export const User = createSchema({
-  username: { type: string },
+  username: _.string(),
   email: email(),
   hobbies: tags(),
 });
