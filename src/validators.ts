@@ -1,4 +1,3 @@
-import { Schema } from './createSchema';
 import { UnknownKey, isPlainObject } from './utils';
 
 export type StringValidator = {
@@ -42,13 +41,20 @@ export type Validator =
   | ArrayValidator
   | ObjectValidator;
 
-const isValidatorNoop = (value: unknown, validator: Validator) =>
-  value == null && Boolean(validator.optional);
+export interface Schema {
+  [key: string]: Validator;
+}
+
+const TYPEERR = 'Invalid Type';
+
+function shouldSkipValidation(value: unknown, validator: Validator) {
+  return value == null && Boolean(validator.optional);
+}
 
 function validateString(validator: StringValidator, value: unknown): null | string {
-  if (isValidatorNoop(value, validator)) return null;
+  if (shouldSkipValidation(value, validator)) return null;
 
-  if (typeof value != 'string') return `Invalid Type`;
+  if (typeof value != 'string') return TYPEERR;
 
   const [pattern, patterErrMsg] = validator.pattern ? validator.pattern : [];
   if (pattern && patterErrMsg && pattern.test(value) == false) return patterErrMsg;
@@ -65,10 +71,9 @@ function validateString(validator: StringValidator, value: unknown): null | stri
 }
 
 function validateNumber(validator: NumberValidator, value: unknown): null | string {
-  if (isValidatorNoop(value, validator)) return null;
+  if (shouldSkipValidation(value, validator)) return null;
 
-  if (typeof value != 'number') return `Invalid Type`;
-  if (isNaN(value)) return `Invalid Type`;
+  if (typeof value != 'number' || isNaN(value)) return TYPEERR;
 
   const [min, minErrMsg] = validator.min ? validator.min : [];
   if (typeof min == 'number' && minErrMsg && !isNaN(min) && value < min) return minErrMsg;
@@ -80,8 +85,8 @@ function validateNumber(validator: NumberValidator, value: unknown): null | stri
 }
 
 function validateBoolean(validator: BooleanValidator, value: unknown): null | string {
-  if (typeof value != 'boolean') return `Invalid Type`;
-  if (isValidatorNoop(value, validator)) return null;
+  if (typeof value != 'boolean') return TYPEERR;
+  if (shouldSkipValidation(value, validator)) return null;
   return null;
 }
 
@@ -91,7 +96,7 @@ function mergeErrors(
   validator: Validator,
   value: unknown
 ): void {
-  if (isValidatorNoop(value, validator)) return;
+  if (shouldSkipValidation(value, validator)) return;
 
   if (validator.type == 'string') {
     const error = validateString(validator, value);
@@ -109,8 +114,8 @@ function mergeErrors(
       parentError[key] = error;
     }
   } else if (validator.type == 'array') {
-    if (isValidatorNoop(value, validator)) return;
-    if (!Array.isArray(value)) parentError[key] = `Invalid Type`;
+    if (shouldSkipValidation(value, validator)) return;
+    if (!Array.isArray(value)) parentError[key] = TYPEERR;
     if (!validator.of) parentError[key] = `missing or undefined`;
     if (!isPlainObject(validator.of)) parentError[key] = `expected "of" to be an object`;
 
@@ -131,14 +136,14 @@ function mergeErrors(
     )
       delete parentError[key];
   } else if (validator.type == 'object') {
-    if (isValidatorNoop(value, validator)) return;
+    if (shouldSkipValidation(value, validator)) return;
 
     if (!isPlainObject(value)) {
-      parentError[key] = `Invalid Type`;
+      parentError[key] = TYPEERR;
       return;
     }
     if (!isPlainObject(validator.shape)) {
-      parentError[key] = `Invalid Shape Type`;
+      parentError[key] = TYPEERR;
       return;
     }
 
@@ -186,6 +191,9 @@ function mergeErrors(
 }
 
 export function createErrors(schema: Schema, data: unknown) {
+  if (!isPlainObject(data)) {
+    throw new Error('data should be a valid object');
+  }
   const errors: Record<string, unknown> = {};
   const schemaKeys = Object.keys(schema);
   for (let i = 0; i < schemaKeys.length; i++) {
@@ -194,7 +202,7 @@ export function createErrors(schema: Schema, data: unknown) {
     if (!isPlainObject(validator) || !validator) {
       throw new Error(`Invalid validator "${key}"`);
     }
-    const value = (data as Record<string, unknown>)[key];
+    const value = data[key];
     mergeErrors(errors, key, validator, value);
   }
   return errors;
