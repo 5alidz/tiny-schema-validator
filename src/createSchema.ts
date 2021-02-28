@@ -5,14 +5,7 @@ export interface Schema {
   [key: string]: Validator;
 }
 
-interface ISchema<T> {
-  validate: (data: unknown) => Record<string, unknown> | null;
-  toObjectValidator: (config?: { optional: boolean }) => ObjectValidator;
-  produce: (data: unknown) => T;
-  is: (data: unknown) => boolean;
-}
-
-export const createSchema = <T>(_schema: Schema): Readonly<ISchema<T>> => {
+export const createSchema = <T>(_schema: Schema) => {
   if (!isPlainObject(_schema)) throw new Error('schema should be a valid object');
 
   const schema = Object.freeze({ ..._schema });
@@ -35,13 +28,12 @@ export const createSchema = <T>(_schema: Schema): Readonly<ISchema<T>> => {
     return { type: 'object', shape: schema, ..._config };
   }
 
-  const produce: ISchema<T>['produce'] = data => {
+  function produce(data: unknown) {
     if (is(data)) {
       return data;
-    } else {
-      throw new Error('');
     }
-  };
+    throw new Error('invalid data');
+  }
 
   return {
     validate,
