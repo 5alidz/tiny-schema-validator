@@ -181,12 +181,12 @@ describe('correct conversion from schema to ObjectValidator', () => {
   const validator = { name: { type: 'string' } } as const;
   const schema = createSchema(validator);
   test('converts to ObjectValidator', () => {
-    expect(schema.toObjectValidator()).toStrictEqual({
+    expect(schema.embed()).toStrictEqual({
       type: 'object',
       shape: validator,
       optional: false,
     });
-    expect(schema.toObjectValidator({ optional: true })).toStrictEqual({
+    expect(schema.embed({ optional: true })).toStrictEqual({
       type: 'object',
       shape: validator,
       optional: true,
