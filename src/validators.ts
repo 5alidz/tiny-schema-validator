@@ -1,3 +1,4 @@
+import { Schema } from './createSchema';
 import { UnknownKey, isPlainObject } from './utils';
 
 export type StringValidator = {
@@ -84,7 +85,7 @@ function validateBoolean(validator: BooleanValidator, value: unknown): null | st
   return null;
 }
 
-export function mergeErrors(
+function mergeErrors(
   parentError: Record<string, unknown>,
   key: string,
   validator: Validator,
@@ -182,4 +183,19 @@ export function mergeErrors(
     // @ts-expect-error
     throw new Error(`${validator.type} is not recognized as validation type`);
   }
+}
+
+export function createErrors(schema: Schema, data: unknown) {
+  const errors: Record<string, unknown> = {};
+  const schemaKeys = Object.keys(schema);
+  for (let i = 0; i < schemaKeys.length; i++) {
+    const key = schemaKeys[i];
+    const validator = schema[key];
+    if (!isPlainObject(validator) || !validator) {
+      throw new Error(`Invalid validator "${key}"`);
+    }
+    const value = (data as Record<string, unknown>)[key];
+    mergeErrors(errors, key, validator, value);
+  }
+  return errors;
 }

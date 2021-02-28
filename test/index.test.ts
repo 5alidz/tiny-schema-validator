@@ -1,4 +1,4 @@
-import { createSchema, dynamicObjectKey } from '../src/index';
+import { createSchema } from '../src/index';
 import { _ } from '../src/helpers';
 
 // quick and minimal to create strings to be used against stringValidators
@@ -13,7 +13,7 @@ const create_str = (length: number, fill: string = 'T') => {
 describe('throws on invalid schema-or-data type', () => {
   test('throws when schema is not a valid plain object', () => {
     // @ts-expect-error
-    expect(() => createSchema(null)).toThrow();
+    expect(() => createSchema<{ data: null }>(null)).toThrow();
     // @ts-expect-error
     expect(() => createSchema(undefined)).toThrow();
     // @ts-expect-error
@@ -119,61 +119,6 @@ describe('primitive validators only use cases', () => {
     expect(
       schema.validate({ name: 'john doe', age: 42, isVerified: true, email: 'joh.doe@hotmail.com' })
     ).toStrictEqual({ email: 'only gmail' });
-  });
-});
-
-describe('objects and arrays validators only use cases', () => {
-  const schema = createSchema({
-    tags: {
-      type: 'array',
-      of: { type: 'string' },
-    },
-    metadata: {
-      type: 'object',
-      shape: {
-        issat: { type: 'number' },
-        expires: { type: 'number' },
-        [dynamicObjectKey]: { type: 'string' },
-      },
-    },
-  });
-
-  test('does not return errors on happy path', () => {
-    expect(
-      schema.validate({
-        tags: [create_str(3), create_str(44)],
-        metadata: { issat: Date.now(), expires: Date.now() },
-      })
-    ).toBe(null); // without dynamic key
-    expect(
-      schema.validate({
-        tags: [create_str(3), create_str(44)],
-        metadata: { issat: Date.now(), expires: Date.now(), dynamic_key: 'hello world' },
-      })
-    ).toBe(null); // passes dynamic keys when defined
-  });
-
-  test('returns correct errors when provided with incorrect data', () => {
-    expect(
-      schema.validate({
-        tags: [create_str(3), create_str(44)],
-        metadata: { issat: 'today', expires: 'tomorrow' },
-      })
-    ).toStrictEqual({
-      metadata: { issat: 'Invalid Type', expires: 'Invalid Type' },
-    });
-    expect(
-      schema.validate({
-        tags: [create_str(3), create_str(44), 42],
-        metadata: { issat: 'today', expires: 'tomorrow' },
-      })
-    ).toStrictEqual({
-      tags: { 2: 'Invalid Type' },
-      metadata: {
-        issat: 'Invalid Type',
-        expires: 'Invalid Type',
-      },
-    });
   });
 });
 
