@@ -11,7 +11,7 @@ import {
 
 const TYPEERR = 'Invalid Type';
 
-function isError(err: unknown) {
+function shouldAddToErrors(err: unknown) {
   if (
     err == null ||
     (isPlainObject(err) && Object.keys(err).length < 1) ||
@@ -85,12 +85,12 @@ const validators = {
     for (let i = 0; i < value.length; i++) {
       const current = value[i];
       const err = handleValue(validator.of, current);
-      if (isError(err)) {
+      if (shouldAddToErrors(err)) {
         errors[i] = err;
       }
     }
 
-    return isError(errors) ? errors : null;
+    return shouldAddToErrors(errors) ? errors : null;
   },
   object(validator: ObjectValidator, value: unknown) {
     if (shouldSkipValidation(value, validator)) return;
@@ -106,7 +106,7 @@ const validators = {
       const shapeKey = shapeKeys[i];
       const shapeValidator = validator.shape[shapeKey];
       const err = handleValue(shapeValidator, value[shapeKey]);
-      if (isError(err)) {
+      if (shouldAddToErrors(err)) {
         errors[shapeKey] = err;
       }
     }
@@ -118,7 +118,7 @@ const validators = {
       for (let i = 0; i < unknownKeys.length; i++) {
         const _key = unknownKeys[i];
         const err = handleValue(unknownValidator, value[_key]);
-        if (isError(err)) {
+        if (shouldAddToErrors(err)) {
           errors[_key] = err;
         }
       }
@@ -144,7 +144,7 @@ function handleValue(validator: Validator, value: unknown) {
   }
 }
 
-export function createErrors(schema: Schema, data: unknown) {
+export function createErrors(schema: Schema, data: unknown, eager: boolean = false) {
   if (!isPlainObject(data)) {
     throw new Error('data should be a valid object');
   }
@@ -156,8 +156,9 @@ export function createErrors(schema: Schema, data: unknown) {
     if (!isPlainObject(validator) || !validator) throw new Error(`Invalid validator "${key}"`);
     const value = data[key];
     const err = handleValue(validator, value);
-    if (isError(err)) {
+    if (shouldAddToErrors(err)) {
       errors[key] = err;
+      if (eager) return errors;
     }
   }
   return errors;
