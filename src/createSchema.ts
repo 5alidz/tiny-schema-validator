@@ -7,13 +7,13 @@ export const createSchema = <T>(_schema: Schema) => {
   // copy schema to ensure the correctness of the validation
   const schema = Object.freeze({ ..._schema });
 
-  function validate(data: any) {
-    const errors = createErrors(schema, data);
+  function validate(data: any, eager: boolean = false) {
+    const errors = createErrors(schema, data, eager);
     return Object.keys(errors).length > 0 ? errors : null;
   }
 
   function is(data: any): data is T {
-    const errors = validate(data);
+    const errors = validate(data, true);
     return !errors;
   }
 
