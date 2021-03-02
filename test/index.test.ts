@@ -96,6 +96,12 @@ describe('primitive validators only use cases', () => {
     });
 
     expect(
+      schema.validate({ name: true, age: create_str(3), isVerified: 0, email: 42 }, true)
+    ).toStrictEqual({
+      name: 'Invalid Type',
+    });
+
+    expect(
       schema.validate({
         name: create_str(101),
         age: 42,
