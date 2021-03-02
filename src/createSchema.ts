@@ -1,9 +1,10 @@
 import { isPlainObject } from './utils';
-import { ObjectValidator, createErrors, Schema } from './validators';
+import { createErrors } from './validators';
+import { ObjectValidator, Schema } from './validatorsSpec';
 
 export const createSchema = <T>(_schema: Schema) => {
   if (!isPlainObject(_schema)) throw new Error('schema should be a valid object');
-
+  // copy schema to ensure the correctness of the validation
   const schema = Object.freeze({ ..._schema });
 
   function validate(data: any) {

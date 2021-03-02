@@ -1,166 +1,114 @@
 import { UnknownKey, isPlainObject } from './utils';
-
-export type StringValidator = {
-  type: 'string';
-  optional?: boolean;
-  minLength?: [number, string];
-  maxLength?: [number, string];
-  pattern?: [RegExp, string];
-};
-
-export type NumberValidator = {
-  type: 'number';
-  optional?: boolean;
-  max?: [number, string];
-  min?: [number, string];
-};
-
-export type BooleanValidator = {
-  type: 'boolean';
-  optional?: boolean;
-};
-
-export type ObjectValidator = {
-  type: 'object';
-  optional?: boolean;
-  shape: {
-    [key: string]: Validator;
-  };
-};
-
-export type ArrayValidator = {
-  type: 'array';
-  optional?: boolean;
-  of: Validator;
-};
-
-export type Validator =
-  | StringValidator
-  | NumberValidator
-  | BooleanValidator
-  | ArrayValidator
-  | ObjectValidator;
-
-export interface Schema {
-  [key: string]: Validator;
-}
+import {
+  Schema,
+  ArrayValidator,
+  BooleanValidator,
+  NumberValidator,
+  ObjectValidator,
+  StringValidator,
+  Validator,
+} from './validatorsSpec';
 
 const TYPEERR = 'Invalid Type';
+
+function isError(err: unknown) {
+  if (
+    err == null ||
+    (isPlainObject(err) && Object.keys(err).length < 1) ||
+    (Array.isArray(err) && err.length < 1)
+  ) {
+    return false;
+  }
+  return true;
+}
 
 function shouldSkipValidation(value: unknown, validator: Validator) {
   return value == null && Boolean(validator.optional);
 }
 
-function validateString(validator: StringValidator, value: unknown): null | string {
-  if (shouldSkipValidation(value, validator)) return null;
+const isStringValidator = (validator: Validator): validator is StringValidator =>
+  validator.type == 'string';
+const isNumberValidator = (validator: Validator): validator is NumberValidator =>
+  validator.type == 'number';
+const isBooleanValidator = (validator: Validator): validator is BooleanValidator =>
+  validator.type == 'boolean';
+const isArrayValidator = (validator: Validator): validator is ArrayValidator =>
+  validator.type == 'array';
+const isObjectValidator = (validator: Validator): validator is ObjectValidator =>
+  validator.type == 'object';
 
-  if (typeof value != 'string') return TYPEERR;
+const validators = {
+  string(validator: StringValidator, value: unknown) {
+    if (shouldSkipValidation(value, validator)) return null;
 
-  const [pattern, patterErrMsg] = validator.pattern ? validator.pattern : [];
-  if (pattern && patterErrMsg && pattern.test(value) == false) return patterErrMsg;
+    if (typeof value != 'string') return TYPEERR;
 
-  const [minLength, minLengthErrMsg] = validator.minLength ? validator.minLength : [];
-  if (minLength && minLengthErrMsg && typeof minLength == 'number' && value.length < minLength)
-    return minLengthErrMsg;
+    const [pattern, patterErrMsg] = validator.pattern ? validator.pattern : [];
+    if (pattern && patterErrMsg && pattern.test(value) == false) return patterErrMsg;
 
-  const [maxLength, maxLengthErrMsg] = validator.maxLength ? validator.maxLength : [];
-  if (maxLength && maxLengthErrMsg && typeof maxLength == 'number' && value.length > maxLength)
-    return maxLengthErrMsg;
+    const [minLength, minLengthErrMsg] = validator.minLength ? validator.minLength : [];
+    if (minLength && minLengthErrMsg && typeof minLength == 'number' && value.length < minLength)
+      return minLengthErrMsg;
 
-  return null;
-}
+    const [maxLength, maxLengthErrMsg] = validator.maxLength ? validator.maxLength : [];
+    if (maxLength && maxLengthErrMsg && typeof maxLength == 'number' && value.length > maxLength)
+      return maxLengthErrMsg;
 
-function validateNumber(validator: NumberValidator, value: unknown): null | string {
-  if (shouldSkipValidation(value, validator)) return null;
+    return null;
+  },
+  number(validator: NumberValidator, value: unknown) {
+    if (shouldSkipValidation(value, validator)) return null;
 
-  if (typeof value != 'number' || isNaN(value)) return TYPEERR;
+    if (typeof value != 'number' || isNaN(value)) return TYPEERR;
 
-  const [min, minErrMsg] = validator.min ? validator.min : [];
-  if (typeof min == 'number' && minErrMsg && !isNaN(min) && value < min) return minErrMsg;
+    const [min, minErrMsg] = validator.min ? validator.min : [];
+    if (typeof min == 'number' && minErrMsg && !isNaN(min) && value < min) return minErrMsg;
 
-  const [max, maxErrMsg] = validator.max ? validator.max : [];
-  if (typeof max == 'number' && maxErrMsg && !isNaN(max) && value > max) return maxErrMsg;
+    const [max, maxErrMsg] = validator.max ? validator.max : [];
+    if (typeof max == 'number' && maxErrMsg && !isNaN(max) && value > max) return maxErrMsg;
 
-  return null;
-}
+    return null;
+  },
+  boolean(validator: BooleanValidator, value: unknown) {
+    if (shouldSkipValidation(value, validator)) return null;
+    if (typeof value != 'boolean') return TYPEERR;
+    return null;
+  },
+  array(validator: ArrayValidator, value: unknown) {
+    if (shouldSkipValidation(value, validator)) return null;
+    if (!Array.isArray(value)) return TYPEERR;
+    if (!validator.of) return 'missing or undefined';
+    if (!isPlainObject(validator.of)) return 'expected "of" to be an object';
 
-function validateBoolean(validator: BooleanValidator, value: unknown): null | string {
-  if (typeof value != 'boolean') return TYPEERR;
-  if (shouldSkipValidation(value, validator)) return null;
-  return null;
-}
+    let errors: Record<string, unknown> = {};
 
-function mergeErrors(
-  parentError: Record<string, unknown>,
-  key: string,
-  validator: Validator,
-  value: unknown
-): void {
-  if (shouldSkipValidation(value, validator)) return;
-
-  if (validator.type == 'string') {
-    const error = validateString(validator, value);
-    if (error) {
-      parentError[key] = error;
+    for (let i = 0; i < value.length; i++) {
+      const current = value[i];
+      const err = handleValue(validator.of, current);
+      if (isError(err)) {
+        errors[i] = err;
+      }
     }
-  } else if (validator.type == 'number') {
-    const error = validateNumber(validator, value);
-    if (error) {
-      parentError[key] = error;
-    }
-  } else if (validator.type == 'boolean') {
-    const error = validateBoolean(validator, value);
-    if (error) {
-      parentError[key] = error;
-    }
-  } else if (validator.type == 'array') {
+
+    return isError(errors) ? errors : null;
+  },
+  object(validator: ObjectValidator, value: unknown) {
     if (shouldSkipValidation(value, validator)) return;
-    if (!Array.isArray(value)) parentError[key] = TYPEERR;
-    if (!validator.of) parentError[key] = `missing or undefined`;
-    if (!isPlainObject(validator.of)) parentError[key] = `expected "of" to be an object`;
-
-    if (!parentError[key]) parentError[key] = {};
-
-    for (let i = 0; i < (value as unknown[]).length; i++) {
-      mergeErrors(
-        parentError[key] as Record<string, unknown>,
-        i.toString(),
-        validator.of,
-        (value as unknown[])[i]
-      );
-    }
-
-    if (
-      typeof parentError == 'object' &&
-      Object.keys(parentError[key] as Record<string, unknown>).length < 1
-    )
-      delete parentError[key];
-  } else if (validator.type == 'object') {
-    if (shouldSkipValidation(value, validator)) return;
-
-    if (!isPlainObject(value)) {
-      parentError[key] = TYPEERR;
-      return;
-    }
-    if (!isPlainObject(validator.shape)) {
-      parentError[key] = TYPEERR;
-      return;
-    }
+    if (!isPlainObject(value)) return TYPEERR;
+    if (!isPlainObject(validator.shape)) return TYPEERR;
 
     const shapeKeys = Object.keys(validator.shape);
     const unknownValidator = validator.shape[(UnknownKey as unknown) as string];
 
-    if (!parentError[key]) parentError[key] = {};
+    const errors: Record<string, any> = {};
 
     for (let i = 0; i < shapeKeys.length; i++) {
       const shapeKey = shapeKeys[i];
       const shapeValidator = validator.shape[shapeKey];
-      mergeErrors(
-        parentError[key] as Record<string, unknown>,
-        shapeKey,
-        shapeValidator,
-        (value as Record<string, unknown>)[shapeKey]
-      );
+      const err = handleValue(shapeValidator, value[shapeKey]);
+      if (isError(err)) {
+        errors[shapeKey] = err;
+      }
     }
 
     if (unknownValidator) {
@@ -169,24 +117,30 @@ function mergeErrors(
       );
       for (let i = 0; i < unknownKeys.length; i++) {
         const _key = unknownKeys[i];
-        mergeErrors(
-          parentError[key] as Record<string, unknown>,
-          _key,
-          unknownValidator,
-          (value as Record<string, number>)[_key]
-        );
+        const err = handleValue(unknownValidator, value[_key]);
+        if (isError(err)) {
+          errors[_key] = err;
+        }
       }
     }
 
-    if (
-      typeof parentError[key] == 'object' &&
-      Object.keys(parentError[key] as Record<string, unknown>).length < 1
-    ) {
-      delete parentError[key];
-    }
+    return errors;
+  },
+} as const;
+
+function handleValue(validator: Validator, value: unknown) {
+  if (isStringValidator(validator)) {
+    return validators.string(validator, value);
+  } else if (isNumberValidator(validator)) {
+    return validators.number(validator, value);
+  } else if (isBooleanValidator(validator)) {
+    return validators.boolean(validator, value);
+  } else if (isArrayValidator(validator)) {
+    return validators.array(validator, value);
+  } else if (isObjectValidator(validator)) {
+    return validators.object(validator, value);
   } else {
-    // @ts-expect-error
-    throw new Error(`${validator.type} is not recognized as validation type`);
+    throw new TypeError(`object is not a valid validator ${JSON.stringify(validator)}`);
   }
 }
 
@@ -199,11 +153,12 @@ export function createErrors(schema: Schema, data: unknown) {
   for (let i = 0; i < schemaKeys.length; i++) {
     const key = schemaKeys[i];
     const validator = schema[key];
-    if (!isPlainObject(validator) || !validator) {
-      throw new Error(`Invalid validator "${key}"`);
-    }
+    if (!isPlainObject(validator) || !validator) throw new Error(`Invalid validator "${key}"`);
     const value = data[key];
-    mergeErrors(errors, key, validator, value);
+    const err = handleValue(validator, value);
+    if (isError(err)) {
+      errors[key] = err;
+    }
   }
   return errors;
 }

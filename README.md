@@ -6,12 +6,6 @@
 npm i tiny-schema-validator
 ```
 
-or
-
-```sh
-yarn add tiny-schema-validator
-```
-
 ## Basic usage
 
 ```js

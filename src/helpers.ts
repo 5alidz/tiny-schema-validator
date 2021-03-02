@@ -1,12 +1,12 @@
-import { UnknownKey as dynamicObjectKey, safeSpread } from './utils';
+import { UnknownKey, safeSpread } from './utils';
 import {
+  ArrayValidator,
   BooleanValidator,
   NumberValidator,
   ObjectValidator,
   StringValidator,
   Validator,
-  ArrayValidator,
-} from './validators';
+} from './validatorsSpec';
 
 interface ValidatorsHelpers {
   string: (opts?: Partial<StringValidator>) => StringValidator;
@@ -35,7 +35,7 @@ export const _: ValidatorsHelpers = {
       ...safeSpread(opts),
       type: 'object',
       shape: {
-        [dynamicObjectKey]: v,
+        [UnknownKey]: v,
       },
     };
   },

@@ -1,5 +1,4 @@
-import { createSchema } from '../src/index';
-import { _ } from '../src/helpers';
+import { createSchema, _ } from '../src/index';
 
 // quick and minimal to create strings to be used against stringValidators
 const create_str = (length: number, fill: string = 'T') => {
