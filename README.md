@@ -1,4 +1,4 @@
-[![GitHub license](https://img.shields.io/github/license/5alidz/tiny-schema-validator)](https://github.com/5alidz/tiny-schema-validator/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/5alidz/tiny-schema-validator)](https://github.com/5alidz/tiny-schema-validator/blob/master/LICENSE) ![Minzipped size](https://img.shields.io/bundlephobia/minzip/mobx-react-lite.svg)
 
 ## Installation
 
@@ -6,141 +6,93 @@
 npm i tiny-schema-validator
 ```
 
-## Basic usage
+### Example
+
+#### Basic Example
 
 ```js
-/* in your models folder you export a schema */
 import { createSchema, _ } from 'tiny-schema-validator';
 
 export const Person = createSchema({
-  name: _.string({
-    minLength: [5, 'name is too short'],
-    maxLength: [20, 'name is too long'],
-  }),
-  age: _.number({
-    min: [13, 'members should be above 13 years old'],
-    max: [200, 'i am not sure you can do this'],
-  }),
-  pets: _.listOf(_.record({ name: _.string(), animal: _.string() }, { optional: true })),
+  name: _.string({ maxLength: [100, 'too-long'], minLength: [2, 'too-short'] }),
 });
 
-/* use the schema in your frontend or nodejs code */
-import { Person } from './models/Person';
+Person.is({ name: 'john doe' }); // true
 
-const errors = Person.validate({
-  name: 'John Doe',
-  age: 42,
-  pets: [{ name: 'pirate', animal: 'parrot' }],
-});
+Person.validate({ name: 'john doe' }); // null
+Person.validate({}); // { name: 'invalid-type' }
 
-if (!errors) {
-  // continue doing work safely
-} else {
-  // handle errors
-}
+Person.produce({ name: 'john doe' }); // { name: 'john doe' }
+Person.produce({}); // throws -> { name: 'invalid-type' }
 ```
 
-## Easy way to handle incoming data from any source
+#### Composing schemas
 
 ```js
-import { Person } from './models/Person';
-
-const maybeJohn = getPersonByName('John Doe');
-
-try {
-  const john = Person.produce(maybeJohn);
-  // continue doing work safely
-} catch (errors) {
-  // if `maybeJohn` has errors you cant catch here errors type
-  // type errors = {key: string, message: string}[];
-}
-```
-
-## Compose schemas
-
-```js
-// in ./models/Project
 import { createSchema, _ } from 'tiny-schema-validator';
+import { Person } from 'models/person';
 
-export const Project = createSchema({
-  name: _.string(),
-  url: _.string(),
-});
-
-// in ./models/User
-import { createSchema } from 'tiny-schema-validator';
-import { Project } from './Project';
-
-export const User = createSchema({
-  username: _.string(),
-  email: _.string(),
-  projects: _.listOf(Project.toObjectValidator()), // embed Project schema inside User schema
+export const Group = createSchema({
+  // ...
+  people: _.listof(Person.embed({ optional: true })),
+  // ...
 });
 ```
 
-## Custom types
+### API
+
+#### Schema
+
+When you create a schema with `createSchema` it returns a nice api that is designed to handle mutliple cases that you might run into on the client e.g. React, and on the server:
+
+- `is` verify that a given object has a valid shape, use for branching logic
+- `validate` get errors, use for form validation
+- `produce` create data that matches the schema, if it doesn't match then it will throw an error
+- `embed` embeds itself in other schemas
+
+For usage take a look at [the basic example](#basic-example)
+
+#### Validators
+
+The helpers this package provides are:
+
+- `string`
+- `number`
+- `bool`
+- `record`,
+- `recordof`
+- `listof`
+
+These helpers are functions that returns a validator that the schema understands, for complete options each validator supports, checkout the example below.
 
 ```js
-// in ./models/customTypes
-import { _ } from 'tiny-schema-validator';
-
-export const email = ({ optional = false }) =>
-  _.string({
-    optional,
-    pattern: [/.+@company\.com/, 'invalid company email'],
-  });
-
-export const tags = ({ optional = false }) =>
-  _.listOf(_.string({ pattern: [/swimming|painting|football|reading/, 'unknown tag'] }), {
-    optional,
-  });
-
-// in ./models/User
-import { createSchema, _ } from 'tiny-schema-validator';
-import { email, tags } from './customTypes';
-
-export const User = createSchema({
-  username: _.string(),
-  email: email(),
-  hobbies: tags(),
+_.string({
+  optional: true, // default is false
+  maxLength: [100, 'too-long'], // [value, errMessage]
+  minLength: [0, 'too-short'],
+  pattern: [/\w+/, 'invalid-pattern'],
 });
-```
 
-## Validators sepc
+_.number({
+  optional: true, // default is false
+  max: [100, 'too-big'],
+  min: [0, 'too-small'],
+});
 
-```typescript
-type StringValidator = {
-  type: 'string';
-  optional?: boolean;
-  minLength?: [value: number, errorMessage: string];
-  maxLength?: [value: number, errorMessage: string];
-  pattern?: [RegExp, string];
-}
+_.bool({
+  optional: true, // default is false
+});
 
-type NumberValidator = {
-  type: 'number';
-  optional?: boolean;
-  max?: [value: number, errorMessage: string];
-  min?: [value: number, errorMessage: string];
-}
+_.listof(_.string() /* validator (from `_`) */, { optional: true });
 
-type BooleanValidator = {
-  type: 'boolean';
-  optional?: boolean;
-}
+_.record(
+  {
+    /* { [key]: validator }*/
+    prop1: _.string(),
+    prop2: _.number(),
+  },
+  { optional: true }
+);
 
-type ArrayValidator = {
-  type: 'array';
-  optional?: boolean;
-  of: StringValidator | NumberValidator | BooleanValidator | ArrayValidator | ObjectValidator;
-}
-
-type ObjectValidator = {
-  type: 'object';
-  optional?: boolean;
-  shape: {
-    [key: string]: StringValidator | NumberValidator | BooleanValidator | ArrayValidator | ObjectValidator;
-  };
-}
-
+_.recordof(_.string() /* validator */, { optional: true });
 ```
