@@ -12,9 +12,9 @@ interface ValidatorsHelpers {
   string: (opts?: Partial<StringValidator>) => StringValidator;
   bool: (opts?: Partial<BooleanValidator>) => BooleanValidator;
   number: (opts?: Partial<NumberValidator>) => NumberValidator;
-  listOf: (v: Validator, opts?: Partial<ArrayValidator>) => ArrayValidator;
-  recordOf: (v: Validator, opts?: Partial<ObjectValidator>) => ObjectValidator;
   record: (v: Record<string, Validator>, opts?: Partial<ObjectValidator>) => ObjectValidator;
+  recordof: (v: Validator, opts?: Partial<ObjectValidator>) => ObjectValidator;
+  listof: (v: Validator, opts?: Partial<ArrayValidator>) => ArrayValidator;
 }
 
 export const _: ValidatorsHelpers = {
@@ -27,10 +27,10 @@ export const _: ValidatorsHelpers = {
   number(opts) {
     return { ...safeSpread(opts), type: 'number' };
   },
-  listOf(v, opts) {
+  listof(v, opts) {
     return { ...safeSpread(opts), type: 'array', of: v };
   },
-  recordOf(v, opts) {
+  recordof(v, opts) {
     return {
       ...safeSpread(opts),
       type: 'object',

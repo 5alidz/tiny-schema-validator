@@ -204,8 +204,8 @@ describe('using helpers', () => {
     first_name: _.string({ minLength: [2, 'name is too short'] }),
     last_name: _.string({ optional: true, maxLength: [5, 'too long'] }),
     age: _.number({ min: [13, 'too young'], max: [150, 'too old'] }),
-    pets: _.listOf(_.string({ minLength: [2, 'too short'] }), { optional: true }),
-    friends: _.recordOf(
+    pets: _.listof(_.string({ minLength: [2, 'too short'] }), { optional: true }),
+    friends: _.recordof(
       _.record({
         name: _.string({ minLength: [2, 'too short'] }),
         age: _.number({ min: [13, 'too young'], max: [150, 'too old'] }),
