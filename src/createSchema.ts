@@ -1,29 +1,46 @@
-import { isPlainObject } from './utils';
+import { isPlainObject, ObjectKeys } from './utils';
 import { createErrors } from './validators';
-import { ObjectValidator, Schema } from './validatorsSpec';
+import { ObjectValidator, Validator } from './validatorsSpec';
+import { DATAERR, OBJECT, SCHEMAERR } from './constants';
+import invariant from 'tiny-invariant';
 
-export const createSchema = <T>(_schema: Schema) => {
-  if (!isPlainObject(_schema)) throw new Error('schema should be a valid object');
+type FieldError<T> = T extends object | void
+  ? T extends Array<infer U> | void
+    ? string | ErrorsOf<{ [key: number]: U }>
+    : string | ErrorsOf<T>
+  : string;
+
+type ErrorsOf<P> = Partial<
+  {
+    [K in keyof P]: FieldError<P[K]>;
+  }
+>;
+
+export const createSchema = <T extends Record<string, any>>(
+  _schema: { [K in keyof T]: Validator }
+) => {
+  invariant(isPlainObject(_schema), SCHEMAERR);
+
   // copy schema to ensure the correctness of the validation
   const schema = Object.freeze({ ..._schema });
 
   function validate(data: any, eager: boolean = false) {
     const errors = createErrors(schema, data, eager);
-    return Object.keys(errors).length > 0 ? errors : null;
+    return ObjectKeys(errors).length > 0 ? (errors as ErrorsOf<T>) : null;
   }
 
   function is(data: any): data is T {
     const errors = validate(data, true);
-    return !errors;
+    return !errors && isPlainObject(data);
   }
 
   function embed(config = { optional: false }): ObjectValidator {
-    return { type: 'object', shape: schema, ...config };
+    return { type: OBJECT, shape: schema, ...config };
   }
 
   function produce(data: any) {
-    if (is(data)) return data;
-    throw new Error('invalid data');
+    invariant(is(data), DATAERR);
+    return data;
   }
 
   return {
