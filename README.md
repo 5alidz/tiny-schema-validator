@@ -43,14 +43,14 @@ export const Group = createSchema({
 
 #### Schema
 
-When you create a schema with `createSchema` it returns a nice api that is designed to handle mutliple cases that you might run into on the client e.g. React, and on the server:
+When you create a schema with `createSchema` it returns a nice API designed to handle multiple cases that you might run into on the client and the server:
 
 - `is` verify that a given object has a valid shape, use for branching logic
 - `validate` get errors, use for form validation
-- `produce` create data that matches the schema, if it doesn't match then it will throw an error
+- `produce` create data that matches the schema. if it doesn't match, it will throw an error
 - `embed` embeds itself in other schemas
 
-For usage take a look at [the basic example](#basic-example)
+For usage, take a look at [the basic example](#basic-example)
 
 #### Validators
 
@@ -59,11 +59,11 @@ The helpers this package provides are:
 - `string`
 - `number`
 - `bool`
-- `record`,
+- `record`
 - `recordof`
 - `listof`
 
-These helpers are functions that returns a validator that the schema understands, for complete options each validator supports, checkout the example below.
+These helpers are functions that return a validator that the schema understands. Take a look at the example below for all the possible options:
 
 ```js
 _.string({
