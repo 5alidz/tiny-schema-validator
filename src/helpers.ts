@@ -1,3 +1,4 @@
+import { ARRAY, BOOLEAN, NUMBER, OBJECT, STRING } from './constants';
 import { UnknownKey, safeSpread } from './utils';
 import {
   ArrayValidator,
@@ -8,32 +9,37 @@ import {
   Validator,
 } from './validatorsSpec';
 
+type WithOutType<T> = Omit<T, 'type'>;
+
 interface ValidatorsHelpers {
-  string: (opts?: Partial<StringValidator>) => StringValidator;
-  bool: (opts?: Partial<BooleanValidator>) => BooleanValidator;
-  number: (opts?: Partial<NumberValidator>) => NumberValidator;
-  record: (v: Record<string, Validator>, opts?: Partial<ObjectValidator>) => ObjectValidator;
-  recordof: (v: Validator, opts?: Partial<ObjectValidator>) => ObjectValidator;
-  listof: (v: Validator, opts?: Partial<ArrayValidator>) => ArrayValidator;
+  string: (opts?: Partial<WithOutType<StringValidator>>) => StringValidator;
+  bool: (opts?: Partial<WithOutType<BooleanValidator>>) => BooleanValidator;
+  number: (opts?: Partial<WithOutType<NumberValidator>>) => NumberValidator;
+  record: (
+    v: Record<string, Validator>,
+    opts?: Partial<WithOutType<ObjectValidator>>
+  ) => ObjectValidator;
+  recordof: (v: Validator, opts?: Partial<WithOutType<ObjectValidator>>) => ObjectValidator;
+  listof: (v: Validator, opts?: Partial<WithOutType<ArrayValidator>>) => ArrayValidator;
 }
 
 export const _: ValidatorsHelpers = {
   string(opts) {
-    return { ...safeSpread(opts), type: 'string' };
+    return { ...safeSpread(opts), type: STRING };
   },
   bool(opts) {
-    return { ...safeSpread(opts), type: 'boolean' };
+    return { ...safeSpread(opts), type: BOOLEAN };
   },
   number(opts) {
-    return { ...safeSpread(opts), type: 'number' };
+    return { ...safeSpread(opts), type: NUMBER };
   },
   listof(v, opts) {
-    return { ...safeSpread(opts), type: 'array', of: v };
+    return { ...safeSpread(opts), type: ARRAY, of: v };
   },
   recordof(v, opts) {
     return {
       ...safeSpread(opts),
-      type: 'object',
+      type: OBJECT,
       shape: {
         [UnknownKey]: v,
       },
@@ -42,7 +48,7 @@ export const _: ValidatorsHelpers = {
   record(v, opts) {
     return {
       ...safeSpread(opts),
-      type: 'object',
+      type: OBJECT,
       shape: v,
     };
   },

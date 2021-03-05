@@ -18,7 +18,8 @@
     "prepare": "tsdx build",
     "size": "size-limit",
     "analyze": "size-limit --why",
-    "release": "standard-version"
+    "release": "standard-version",
+    "release:alpha": "yarn release -- --prerelease alpha"
   },
   "peerDependencies": {},
   "husky": {
@@ -76,5 +77,8 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "dependencies": {
+    "tiny-invariant": "^1.1.0"
   }
 }

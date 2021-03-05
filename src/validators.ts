@@ -1,6 +1,6 @@
-import { UnknownKey, isPlainObject } from './utils';
+import { UnknownKey, isPlainObject, isNumber, ObjectKeys, isString, isBool } from './utils';
+import { SCHEMAERR, TYPEERR } from './constants';
 import {
-  Schema,
   ArrayValidator,
   BooleanValidator,
   NumberValidator,
@@ -8,13 +8,12 @@ import {
   StringValidator,
   Validator,
 } from './validatorsSpec';
-
-const TYPEERR = 'Invalid Type';
+import invariant from 'tiny-invariant';
 
 function shouldAddToErrors(err: unknown) {
   if (
     err == null ||
-    (isPlainObject(err) && Object.keys(err).length < 1) ||
+    (isPlainObject(err) && ObjectKeys(err).length < 1) ||
     (Array.isArray(err) && err.length < 1)
   ) {
     return false;
@@ -26,61 +25,49 @@ function shouldSkipValidation(value: unknown, validator: Validator) {
   return value == null && Boolean(validator.optional);
 }
 
-const isStringValidator = (validator: Validator): validator is StringValidator =>
-  validator.type == 'string';
-const isNumberValidator = (validator: Validator): validator is NumberValidator =>
-  validator.type == 'number';
-const isBooleanValidator = (validator: Validator): validator is BooleanValidator =>
-  validator.type == 'boolean';
-const isArrayValidator = (validator: Validator): validator is ArrayValidator =>
-  validator.type == 'array';
-const isObjectValidator = (validator: Validator): validator is ObjectValidator =>
-  validator.type == 'object';
-
 const validators = {
-  string(validator: StringValidator, value: unknown) {
+  string(validator: StringValidator, value: unknown): string | null {
     if (shouldSkipValidation(value, validator)) return null;
 
-    if (typeof value != 'string') return TYPEERR;
+    if (!isString(value)) return TYPEERR;
+
+    const [minLength, minLengthErrMsg] = validator.minLength ? validator.minLength : [];
+    if (minLength && minLengthErrMsg && isNumber(minLength) && value.length < minLength)
+      return minLengthErrMsg;
+
+    const [maxLength, maxLengthErrMsg] = validator.maxLength ? validator.maxLength : [];
+    if (maxLength && maxLengthErrMsg && isNumber(maxLength) && value.length > maxLength)
+      return maxLengthErrMsg;
 
     const [pattern, patterErrMsg] = validator.pattern ? validator.pattern : [];
     if (pattern && patterErrMsg && pattern.test(value) == false) return patterErrMsg;
 
-    const [minLength, minLengthErrMsg] = validator.minLength ? validator.minLength : [];
-    if (minLength && minLengthErrMsg && typeof minLength == 'number' && value.length < minLength)
-      return minLengthErrMsg;
-
-    const [maxLength, maxLengthErrMsg] = validator.maxLength ? validator.maxLength : [];
-    if (maxLength && maxLengthErrMsg && typeof maxLength == 'number' && value.length > maxLength)
-      return maxLengthErrMsg;
-
     return null;
   },
-  number(validator: NumberValidator, value: unknown) {
+  number(validator: NumberValidator, value: unknown): string | null {
     if (shouldSkipValidation(value, validator)) return null;
 
-    if (typeof value != 'number' || isNaN(value)) return TYPEERR;
+    if (!isNumber(value)) return TYPEERR;
 
     const [min, minErrMsg] = validator.min ? validator.min : [];
-    if (typeof min == 'number' && minErrMsg && !isNaN(min) && value < min) return minErrMsg;
+    if (isNumber(min) && value < min && minErrMsg) return minErrMsg;
 
     const [max, maxErrMsg] = validator.max ? validator.max : [];
-    if (typeof max == 'number' && maxErrMsg && !isNaN(max) && value > max) return maxErrMsg;
+    if (isNumber(max) && value > max && maxErrMsg) return maxErrMsg;
 
     return null;
   },
-  boolean(validator: BooleanValidator, value: unknown) {
+  boolean(validator: BooleanValidator, value: unknown): string | null {
     if (shouldSkipValidation(value, validator)) return null;
-    if (typeof value != 'boolean') return TYPEERR;
+    if (!isBool(value)) return TYPEERR;
     return null;
   },
-  array(validator: ArrayValidator, value: unknown) {
+  array(validator: ArrayValidator, value: unknown): string | null | Record<string, any> {
     if (shouldSkipValidation(value, validator)) return null;
     if (!Array.isArray(value)) return TYPEERR;
-    if (!validator.of) return 'missing or undefined';
-    if (!isPlainObject(validator.of)) return 'expected "of" to be an object';
+    invariant(isPlainObject(validator.of), SCHEMAERR);
 
-    let errors: Record<string, unknown> = {};
+    let errors: Record<string, any> = {};
 
     for (let i = 0; i < value.length; i++) {
       const current = value[i];
@@ -92,12 +79,12 @@ const validators = {
 
     return shouldAddToErrors(errors) ? errors : null;
   },
-  object(validator: ObjectValidator, value: unknown) {
-    if (shouldSkipValidation(value, validator)) return;
+  object(validator: ObjectValidator, value: unknown): string | null | Record<string, any> {
+    if (shouldSkipValidation(value, validator)) return null;
     if (!isPlainObject(value)) return TYPEERR;
     if (!isPlainObject(validator.shape)) return TYPEERR;
 
-    const shapeKeys = Object.keys(validator.shape);
+    const shapeKeys = ObjectKeys(validator.shape);
     const unknownValidator = validator.shape[(UnknownKey as unknown) as string];
 
     const errors: Record<string, any> = {};
@@ -112,7 +99,7 @@ const validators = {
     }
 
     if (unknownValidator) {
-      const unknownKeys = Object.keys(value as Record<string, unknown>).filter(
+      const unknownKeys = ObjectKeys(value as Record<string, unknown>).filter(
         key => !shapeKeys.includes(key)
       );
       for (let i = 0; i < unknownKeys.length; i++) {
@@ -126,40 +113,46 @@ const validators = {
 
     return errors;
   },
-} as const;
+};
+
+type ValidationFunction = (
+  v: Validator,
+  value: unknown
+) => ReturnType<typeof validators[Validator['type']]>;
 
 function handleValue(validator: Validator, value: unknown) {
-  if (isStringValidator(validator)) {
-    return validators.string(validator, value);
-  } else if (isNumberValidator(validator)) {
-    return validators.number(validator, value);
-  } else if (isBooleanValidator(validator)) {
-    return validators.boolean(validator, value);
-  } else if (isArrayValidator(validator)) {
-    return validators.array(validator, value);
-  } else if (isObjectValidator(validator)) {
-    return validators.object(validator, value);
-  } else {
-    throw new TypeError(`object is not a valid validator ${JSON.stringify(validator)}`);
-  }
+  const validatorFunction = validators[validator.type] as ValidationFunction;
+  invariant(typeof validatorFunction == 'function', SCHEMAERR);
+  return validatorFunction(validator, value);
 }
 
-export function createErrors(schema: Schema, data: unknown, eager: boolean = false) {
+export function createErrors<T>(
+  schema: { [K in keyof T]: Validator },
+  data: T,
+  eager: boolean = false
+) {
+  const schemaKeys = ObjectKeys(schema) as (keyof T)[];
   if (!isPlainObject(data)) {
-    throw new Error('data should be a valid object');
-  }
-  const errors: Record<string, unknown> = {};
-  const schemaKeys = Object.keys(schema);
-  for (let i = 0; i < schemaKeys.length; i++) {
-    const key = schemaKeys[i];
-    const validator = schema[key];
-    if (!isPlainObject(validator) || !validator) throw new Error(`Invalid validator "${key}"`);
-    const value = data[key];
-    const err = handleValue(validator, value);
-    if (shouldAddToErrors(err)) {
-      errors[key] = err;
-      if (eager) return errors;
+    return schemaKeys.reduce((errors, schemaKey) => {
+      const validator = schema[schemaKey];
+      if (!validator.optional) {
+        errors[schemaKey] = TYPEERR as string;
+      }
+      return errors;
+    }, {} as Record<keyof T, any>);
+  } else {
+    const errors = {} as Record<keyof T, any>;
+    for (let i = 0; i < schemaKeys.length; i++) {
+      const schemaKey = schemaKeys[i];
+      const validator = schema[schemaKey];
+      invariant(isPlainObject(validator), SCHEMAERR);
+      const value = isPlainObject(data) ? data[schemaKey] : undefined;
+      const err = handleValue(validator, value);
+      if (shouldAddToErrors(err)) {
+        errors[schemaKey] = err;
+        if (eager) return errors;
+      }
     }
+    return errors;
   }
-  return errors;
 }

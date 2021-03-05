@@ -38,7 +38,3 @@ export type Validator =
   | BooleanValidator
   | ArrayValidator
   | ObjectValidator;
-
-export interface Schema {
-  [key: string]: Validator;
-}
