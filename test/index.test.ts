@@ -15,6 +15,7 @@ describe('createSchema throws when', () => {
     expect(() => createSchema<{ data: null }>(null)).toThrow();
     // @ts-expect-error
     expect(() => createSchema(undefined)).toThrow();
+    // @ts-expect-error
     expect(() => createSchema([])).toThrow();
   });
   test('passed a validator that is not a plain object', () => {

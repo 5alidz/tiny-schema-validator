@@ -7,7 +7,7 @@ import {
   ObjectValidator,
   StringValidator,
   Validator,
-} from './validatorsSpec';
+} from './validatorTypes';
 
 type WithOutType<T> = Omit<T, 'type'>;
 

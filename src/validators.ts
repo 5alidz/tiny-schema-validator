@@ -7,7 +7,7 @@ import {
   ObjectValidator,
   StringValidator,
   Validator,
-} from './validatorsSpec';
+} from './validatorTypes';
 import invariant from 'tiny-invariant';
 
 function shouldAddToErrors(err: unknown) {
