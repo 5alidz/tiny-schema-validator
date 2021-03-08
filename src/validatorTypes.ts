@@ -1,35 +1,32 @@
-export type StringValidator = {
-  type: 'string';
-  optional?: boolean;
+interface BaseValidator<T> {
+  type: T;
+  optional: boolean; // default is required
+}
+
+interface StringOptions {
   minLength?: [number, string];
   maxLength?: [number, string];
   pattern?: [RegExp, string];
-};
+}
 
-export type NumberValidator = {
-  type: 'number';
-  optional?: boolean;
+interface NumberOptions {
   max?: [number, string];
   min?: [number, string];
+  is?: ['integer' | 'float', string];
+}
+
+export type StringValidator = BaseValidator<'string'> & StringOptions;
+export type NumberValidator = BaseValidator<'number'> & NumberOptions;
+export type BooleanValidator = BaseValidator<'boolean'>;
+
+export type ArrayValidator = BaseValidator<'array'> & {
+  of?: Validator;
+  shape?: Validator[];
 };
 
-export type BooleanValidator = {
-  type: 'boolean';
-  optional?: boolean;
-};
-
-export type ObjectValidator = {
-  type: 'object';
-  optional?: boolean;
-  shape: {
-    [key: string]: Validator;
-  };
-};
-
-export type ArrayValidator = {
-  type: 'array';
-  optional?: boolean;
-  of: Validator;
+export type ObjectValidator = BaseValidator<'object'> & {
+  of?: Validator;
+  shape?: { [key: string]: Validator };
 };
 
 export type Validator =
@@ -38,3 +35,15 @@ export type Validator =
   | BooleanValidator
   | ArrayValidator
   | ObjectValidator;
+
+export type InferValidator<T> = T extends string
+  ? StringValidator
+  : T extends number
+  ? NumberValidator
+  : T extends boolean
+  ? BooleanValidator
+  : T extends Array<any>
+  ? ArrayValidator
+  : T extends object
+  ? ObjectValidator
+  : Validator;

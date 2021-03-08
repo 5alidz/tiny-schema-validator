@@ -65,62 +65,65 @@ const validators = {
   array(validator: ArrayValidator, value: unknown): string | null | Record<string, any> {
     if (shouldSkipValidation(value, validator)) return null;
     if (!Array.isArray(value)) return TYPEERR;
-    invariant(isPlainObject(validator.of), SCHEMAERR);
 
-    let errors: Record<string, any> = {};
-
-    for (let i = 0; i < value.length; i++) {
-      const current = value[i];
-      const err = handleValue(validator.of, current);
-      if (shouldAddToErrors(err)) {
-        errors[i] = err;
+    if (isPlainObject(validator.of)) {
+      let errors: Record<string, any> = {};
+      for (let i = 0; i < value.length; i++) {
+        const current = value[i];
+        const err = handleValue(validator.of, current);
+        if (shouldAddToErrors(err)) {
+          errors[i] = err;
+        }
       }
+      return shouldAddToErrors(errors) ? errors : null;
     }
 
-    return shouldAddToErrors(errors) ? errors : null;
+    if (isPlainObject(validator.shape)) {
+      return null;
+    }
+
+    invariant(false, SCHEMAERR);
   },
   object(validator: ObjectValidator, value: unknown): string | null | Record<string, any> {
+    invariant(isPlainObject(validator.shape), SCHEMAERR);
     if (shouldSkipValidation(value, validator)) return null;
     if (!isPlainObject(value)) return TYPEERR;
-    if (!isPlainObject(validator.shape)) return TYPEERR;
 
     const shapeKeys = ObjectKeys(validator.shape);
-    const unknownValidator = validator.shape[(UnknownKey as unknown) as string];
+    const recordofValidator = validator.shape[(UnknownKey as unknown) as string];
 
     const errors: Record<string, any> = {};
 
-    for (let i = 0; i < shapeKeys.length; i++) {
-      const shapeKey = shapeKeys[i];
-      const shapeValidator = validator.shape[shapeKey];
-      const err = handleValue(shapeValidator, value[shapeKey]);
-      if (shouldAddToErrors(err)) {
-        errors[shapeKey] = err;
-      }
-    }
-
-    if (unknownValidator) {
-      const unknownKeys = ObjectKeys(value as Record<string, unknown>).filter(
-        key => !shapeKeys.includes(key)
-      );
-      for (let i = 0; i < unknownKeys.length; i++) {
-        const _key = unknownKeys[i];
-        const err = handleValue(unknownValidator, value[_key]);
+    if (recordofValidator) {
+      const keys = ObjectKeys(value).filter(key => !shapeKeys.includes(key));
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        const err = handleValue(recordofValidator, value[key]);
         if (shouldAddToErrors(err)) {
-          errors[_key] = err;
+          errors[key] = err;
         }
       }
+      return errors;
+    } else {
+      for (let i = 0; i < shapeKeys.length; i++) {
+        const shapeKey = shapeKeys[i];
+        const shapeValidator = validator.shape[shapeKey];
+        const err = handleValue(shapeValidator, value[shapeKey]);
+        if (shouldAddToErrors(err)) {
+          errors[shapeKey] = err;
+        }
+      }
+      return errors;
     }
-
-    return errors;
   },
 };
 
 type ValidationFunction = (
   v: Validator,
-  value: unknown
+  value: any
 ) => ReturnType<typeof validators[Validator['type']]>;
 
-function handleValue(validator: Validator, value: unknown) {
+function handleValue(validator: Validator, value: any) {
   const validatorFunction = validators[validator.type] as ValidationFunction;
   invariant(typeof validatorFunction == 'function', SCHEMAERR);
   return validatorFunction(validator, value);
