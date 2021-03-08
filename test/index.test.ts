@@ -1,5 +1,35 @@
 import { createSchema, _ } from '../src/index';
 import { TYPEERR } from '../src/constants';
+import { _ as __ } from '../src/future/helpers';
+import { createErrors } from '../src/future/createErrors';
+
+test('future', () => {
+  expect(
+    createErrors(
+      {
+        // @ts-expect-error
+        name: __.string(),
+        age: __.number(),
+        obj: __.record({
+          prop: __.string(),
+          list: __.list([__.string(), __.boolean()]),
+        }),
+        people: __.listof(__.string()),
+        people_rec: __.recordof(__.string()),
+      },
+      { obj: { prop: 42, list: ['hello', 42] } }
+    )
+  ).toStrictEqual({
+    name: TYPEERR,
+    age: TYPEERR,
+    obj: {
+      prop: TYPEERR,
+      list: { 1: TYPEERR },
+    },
+    people: TYPEERR,
+    people_rec: TYPEERR,
+  });
+});
 
 const createString = (length: number, char?: string) => {
   let s = '';
@@ -269,10 +299,10 @@ describe('record validator', () => {
   });
 
   test('handle recursive records', () => {
-    const s = createSchema({ o: _.record({ o: _.record({ x: _.number() }) }) });
+    const s = createSchema({ o: _.record({ o: _.record({ x: _.record({ y: _.number() }) }) }) });
 
-    expect(s.validate({ o: { o: { x: 'hello' } } })).toStrictEqual({
-      o: { o: { x: TYPEERR } },
+    expect(s.validate({ o: { o: { x: { y: 'hello' } } } })).toStrictEqual({
+      o: { o: { x: { y: TYPEERR } } },
     });
   });
 });
