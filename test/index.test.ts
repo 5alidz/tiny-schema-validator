@@ -10,6 +10,16 @@ const createString = (length: number, char?: string) => {
 };
 
 describe('createSchema throws when', () => {
+  test('schema has error', () => {
+    expect(() =>
+      createSchema({
+        o: _.record({
+          // @ts-expect-error
+          o2: _.recordof(_.string({ maxLength: [true, 42] })),
+        }),
+      })
+    ).toThrow();
+  });
   test('passed invalid schema', () => {
     // @ts-expect-error
     expect(() => createSchema<{ data: null }>(null)).toThrow();
@@ -256,6 +266,14 @@ describe('record validator', () => {
     expect(
       Person.validate({ meta: { id: null, date_created: 123, is_verified: false } })
     ).toStrictEqual({ meta: { id: TYPEERR } });
+  });
+
+  test('handle recursive records', () => {
+    const s = createSchema({ o: _.record({ o: _.record({ x: _.number() }) }) });
+
+    expect(s.validate({ o: { o: { x: 'hello' } } })).toStrictEqual({
+      o: { o: { x: TYPEERR } },
+    });
   });
 });
 
