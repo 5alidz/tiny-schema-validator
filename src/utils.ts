@@ -1,7 +1,6 @@
 import { BOOLEAN, NUMBER, OBJECT, STRING } from './constants';
 
 export const ObjectKeys = Object.keys.bind(Object);
-
 export const isBool = (value: unknown): value is boolean => typeof value == BOOLEAN;
 export const isString = (value: unknown): value is string => typeof value == STRING;
 export const isNumber = (value: unknown): value is number =>
@@ -11,7 +10,7 @@ export const UnknownKey = Symbol.for('gssu5l');
 
 export const safeSpread = <T extends object>(o?: T) => (o ? o : {});
 
-export function isPlainObject(maybeObject: unknown): maybeObject is Record<string, unknown> {
+export function isPlainObject(maybeObject: any): maybeObject is Record<string, any> {
   return (
     typeof maybeObject == OBJECT &&
     maybeObject != null &&
