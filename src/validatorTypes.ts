@@ -1,3 +1,5 @@
+import { string, number, boolean, list, listof, record, recordof } from './constants';
+
 interface BaseValidator<T> {
   type: T;
   optional: boolean; // default is required
@@ -15,26 +17,38 @@ interface NumberOptions {
   is?: ['integer' | 'float', string];
 }
 
-export type StringValidator = BaseValidator<'string'> & StringOptions;
-export type NumberValidator = BaseValidator<'number'> & NumberOptions;
-export type BooleanValidator = BaseValidator<'boolean'>;
+interface ListofOptions {
+  of: Validator;
+}
 
-export type ArrayValidator = BaseValidator<'array'> & {
-  of?: Validator;
-  shape?: Validator[];
-};
+interface ListOptions {
+  shape: Validator[];
+}
 
-export type ObjectValidator = BaseValidator<'object'> & {
-  of?: Validator;
-  shape?: { [key: string]: Validator };
-};
+interface RecordOptions {
+  shape: { [key: string]: Validator };
+}
+
+interface RecordofOptions {
+  of: Validator;
+}
+
+export type StringValidator = BaseValidator<typeof string> & StringOptions;
+export type NumberValidator = BaseValidator<typeof number> & NumberOptions;
+export type BooleanValidator = BaseValidator<typeof boolean>;
+export type ListValidator = BaseValidator<typeof list> & ListOptions;
+export type ListofValidator = BaseValidator<typeof listof> & ListofOptions;
+export type RecordValidator = BaseValidator<typeof record> & RecordOptions;
+export type RecordofValidator = BaseValidator<typeof recordof> & RecordofOptions;
 
 export type Validator =
   | StringValidator
   | NumberValidator
   | BooleanValidator
-  | ArrayValidator
-  | ObjectValidator;
+  | ListValidator
+  | ListofValidator
+  | RecordValidator
+  | RecordofValidator;
 
 export type InferValidator<T> = T extends string
   ? StringValidator
@@ -43,7 +57,7 @@ export type InferValidator<T> = T extends string
   : T extends boolean
   ? BooleanValidator
   : T extends Array<any>
-  ? ArrayValidator
+  ? ListValidator | ListofValidator
   : T extends object
-  ? ObjectValidator
+  ? RecordValidator | RecordofValidator
   : Validator;

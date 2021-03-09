@@ -1,8 +1,8 @@
 import { isPlainObject, ObjectKeys } from './utils';
-import { createErrors } from './validators';
-import { DATAERR, OBJECT, SCHEMAERR } from './constants';
+import { createErrors } from './createErrors';
+import { DATAERR, record, SCHEMAERR } from './constants';
 import invariant from 'tiny-invariant';
-import { ObjectValidator } from './validatorTypes';
+import { RecordValidator } from './validatorTypes';
 import { SchemaFrom, ErrorsFrom } from './type-utils';
 
 export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFrom<T>) {
@@ -20,8 +20,8 @@ export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFr
     return !errors && isPlainObject(data);
   }
 
-  function embed(config = { optional: false }): ObjectValidator {
-    return { type: OBJECT, shape: schema, ...config };
+  function embed(config = { optional: false }): RecordValidator {
+    return { type: record, shape: schema, ...config };
   }
 
   function produce(data: any): T {

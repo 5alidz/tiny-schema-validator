@@ -1,56 +1,68 @@
-import { ARRAY, BOOLEAN, NUMBER, OBJECT, STRING } from './constants';
-import { UnknownKey, safeSpread } from './utils';
 import {
-  ArrayValidator,
-  BooleanValidator,
-  NumberValidator,
-  ObjectValidator,
   StringValidator,
+  NumberValidator,
+  BooleanValidator,
   Validator,
+  ListValidator,
+  ListofValidator,
+  RecordValidator,
+  RecordofValidator,
 } from './validatorTypes';
+import { string, number, boolean, list, listof, record, recordof } from './constants';
 
-type WithOutType<T> = Omit<T, 'type'>;
+type WithoutType<T> = Omit<T, 'type'>;
 
-interface ValidatorsHelpers {
-  string: (opts?: Partial<WithOutType<StringValidator>>) => StringValidator;
-  bool: (opts?: Partial<WithOutType<BooleanValidator>>) => BooleanValidator;
-  number: (opts?: Partial<WithOutType<NumberValidator>>) => NumberValidator;
-  record: (v: Record<string, Validator>, opts?: { optional: boolean }) => ObjectValidator;
-  recordof: (v: Validator, opts?: { optional: boolean }) => ObjectValidator;
-  listof: (v: Validator, opts?: { optional: boolean }) => ArrayValidator;
+export interface Helpers {
+  string(opts?: Partial<WithoutType<StringValidator>>): StringValidator;
+  number(opts?: Partial<WithoutType<NumberValidator>>): NumberValidator;
+  boolean(opts?: Partial<WithoutType<BooleanValidator>>): BooleanValidator;
+  list(validators: Validator[], opts?: { optional?: boolean }): ListValidator;
+  listof(validator: Validator, opts?: { optional?: boolean }): ListofValidator;
+  record(schema: { [key: string]: Validator }, opts?: { optional?: boolean }): RecordValidator;
+  recordof(validator: Validator, opts?: { optional?: boolean }): RecordofValidator;
 }
 
-const optional = (value: boolean | void) => (typeof value == 'boolean' ? value : false);
+const optional = (v?: boolean) => (typeof v == 'boolean' ? v : false);
+const base = <T extends keyof Helpers>(type: T, optional: boolean) => ({ type, optional });
 
-export const _: ValidatorsHelpers = {
+export const _: Helpers = {
   string(opts) {
-    return { ...safeSpread(opts), type: STRING, optional: optional(opts?.optional) };
-  },
-  bool(opts) {
-    return { ...safeSpread(opts), type: BOOLEAN, optional: optional(opts?.optional) };
-  },
-  number(opts) {
-    return { ...safeSpread(opts), type: NUMBER, optional: optional(opts?.optional) };
-  },
-  listof(v, opts) {
-    return { ...safeSpread(opts), type: ARRAY, of: v, optional: optional(opts?.optional) };
-  },
-  recordof(v, opts) {
     return {
-      ...safeSpread(opts),
-      optional: optional(opts?.optional),
-      type: OBJECT,
-      shape: {
-        [UnknownKey]: v,
-      },
+      ...opts,
+      ...base(string, optional(opts?.optional)),
     };
   },
-  record(v, opts) {
+  boolean(opts) {
+    return base(boolean, optional(opts?.optional));
+  },
+  number(opts) {
     return {
-      ...safeSpread(opts),
-      optional: optional(opts?.optional),
-      type: OBJECT,
-      shape: v,
+      ...opts,
+      ...base(number, optional(opts?.optional)),
+    };
+  },
+  list(shape, opts) {
+    return {
+      ...base(list, optional(opts?.optional)),
+      shape,
+    };
+  },
+  listof(of, opts) {
+    return {
+      ...base(listof, optional(opts?.optional)),
+      of,
+    };
+  },
+  record(shape, opts) {
+    return {
+      ...base(record, optional(opts?.optional)),
+      shape,
+    };
+  },
+  recordof(of, opts) {
+    return {
+      ...base(recordof, optional(opts?.optional)),
+      of,
     };
   },
 };

@@ -1,7 +1,7 @@
 import { traverse } from './traverse';
-import { isPlainObject, ObjectKeys, isNumber, isString, isBool } from '../utils';
+import { isPlainObject, ObjectKeys, isNumber, isString, isBool } from './utils';
 import { Validator } from './validatorTypes';
-import { TYPEERR } from '../constants';
+import { TYPEERR } from './constants';
 
 function shouldSkipValidation(value: unknown, validator: Validator) {
   return value == null && Boolean(validator.optional);
@@ -47,6 +47,13 @@ export function createErrors<T>(schema: { [K in keyof T]: Validator }, data: T, 
 
           const [max, maxErrMsg] = validator.max ? validator.max : [];
           if (isNumber(max) && value > max && maxErrMsg) return maxErrMsg;
+
+          const [is, isErrMsg] = validator.is ? validator.is : [];
+          if (isString(is) && isErrMsg) {
+            const isInt = Number.isInteger(value);
+            if (isInt && is == 'float') return isErrMsg;
+            if (!isInt && is == 'integer') return isErrMsg;
+          }
 
           return null;
         },
