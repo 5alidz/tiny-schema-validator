@@ -1,35 +1,5 @@
 import { createSchema, _ } from '../src/index';
 import { TYPEERR } from '../src/constants';
-import { _ as __ } from '../src/future/helpers';
-import { createErrors } from '../src/future/createErrors';
-
-test('future', () => {
-  expect(
-    createErrors(
-      {
-        // @ts-expect-error
-        name: __.string(),
-        age: __.number(),
-        obj: __.record({
-          prop: __.string(),
-          list: __.list([__.string(), __.boolean()]),
-        }),
-        people: __.listof(__.string()),
-        people_rec: __.recordof(__.string()),
-      },
-      { obj: { prop: 42, list: ['hello', 42] } }
-    )
-  ).toStrictEqual({
-    name: TYPEERR,
-    age: TYPEERR,
-    obj: {
-      prop: TYPEERR,
-      list: { 1: TYPEERR },
-    },
-    people: TYPEERR,
-    people_rec: TYPEERR,
-  });
-});
 
 const createString = (length: number, char?: string) => {
   let s = '';
@@ -221,10 +191,10 @@ describe('number validator', () => {
 
 describe('boolean validator', () => {
   const Person1 = createSchema({
-    is: _.bool({ optional: true }),
+    is: _.boolean({ optional: true }),
   });
   const Person2 = createSchema({
-    is: _.bool(),
+    is: _.boolean(),
   });
 
   test('tests type', () => {
@@ -270,7 +240,7 @@ describe('record validator', () => {
     meta: _.record({
       id: _.string(),
       date_created: _.number(),
-      is_verified: _.bool(),
+      is_verified: _.boolean(),
     }),
     tags: _.listof(_.string(), { optional: true }),
   });

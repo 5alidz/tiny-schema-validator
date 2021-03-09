@@ -77,9 +77,9 @@ function enter(validator: Validator, visitor: Visitor, value: any, eager = false
     const values = toObj(value);
     const keys = ObjectKeys(values);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(validator.of, visitor, values[i], eager);
+      const currentResult = enter(validator.of, visitor, values[keys[i]], eager);
       if (shouldAddToResult(currentResult)) {
-        result[i] = currentResult;
+        result[keys[i]] = currentResult;
         if (eager) return result;
       }
     }
