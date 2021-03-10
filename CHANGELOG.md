@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1-alpha.2](https://github.com/5alidz/tiny-schema-validator/compare/v2.0.1-alpha.1...v2.0.1-alpha.2) (2021-03-10)
+
+
+### Bug Fixes
+
+* prettier not supporting export * as ([0bc2a29](https://github.com/5alidz/tiny-schema-validator/commit/0bc2a2960cdee7c135a1fd57245c1892e2b7293d))
+* recordof traverse using index instead of key ([9606738](https://github.com/5alidz/tiny-schema-validator/commit/96067381a3115d087f2633dfa7291d238eb01243))
+
 ### [2.0.1-alpha.1](https://github.com/5alidz/tiny-schema-validator/compare/v2.0.1-alpha.0...v2.0.1-alpha.1) (2021-03-06)
 
 
