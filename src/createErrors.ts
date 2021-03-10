@@ -20,7 +20,7 @@ export function createErrors<T>(schema: { [K in keyof T]: Validator }, data: T, 
     return traverse(
       schema,
       {
-        string(validator, value) {
+        string(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
           if (!isString(value)) return TYPEERR;
 
@@ -37,7 +37,7 @@ export function createErrors<T>(schema: { [K in keyof T]: Validator }, data: T, 
 
           return null;
         },
-        number(validator, value) {
+        number(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
 
           if (!isNumber(value)) return TYPEERR;
@@ -57,27 +57,27 @@ export function createErrors<T>(schema: { [K in keyof T]: Validator }, data: T, 
 
           return null;
         },
-        boolean(validator, value) {
+        boolean(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
           if (!isBool(value)) return TYPEERR;
           return null;
         },
-        list(validator, value) {
+        list(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
           if (!Array.isArray(value)) return TYPEERR;
           return null;
         },
-        listof(validator, value) {
+        listof(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
           if (!Array.isArray(value)) return TYPEERR;
           return null;
         },
-        record(validator, value) {
+        record(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
           if (!isPlainObject(value)) return TYPEERR;
           return null;
         },
-        recordof(validator, value) {
+        recordof(_, validator, value) {
           if (shouldSkipValidation(value, validator)) return null;
           if (!isPlainObject(value)) return TYPEERR;
           return null;

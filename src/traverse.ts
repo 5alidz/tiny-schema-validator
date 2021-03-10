@@ -1,5 +1,5 @@
 import { ObjectKeys, isPlainObject } from './utils';
-import { list, listof, record, recordof } from './constants';
+import { $list, $listof, $record, $recordof } from './constants';
 import {
   BooleanValidator,
   ListofValidator,
@@ -30,42 +30,37 @@ function toObj(value: any) {
     : ({} as Record<string, any>);
 }
 
-interface Visitor {
-  string?(v: StringValidator, value: any): string | null | Record<string, any>;
-  number?(v: NumberValidator, value: any): string | null | Record<string, any>;
-  boolean?(v: BooleanValidator, value: any): string | null | Record<string, any>;
-  list?(v: ListValidator, value: any): string | null | Record<string, any>;
-  listof?(v: ListofValidator, value: any): string | null | Record<string, any>;
-  record?(v: RecordValidator, value: any): string | null | Record<string, any>;
-  recordof?(v: RecordofValidator, value: any): string | null | Record<string, any>;
+export interface Visitor {
+  string?(key: string, v: StringValidator, value: any): string | null | Record<string, any>;
+  number?(key: string, v: NumberValidator, value: any): string | null | Record<string, any>;
+  boolean?(key: string, v: BooleanValidator, value: any): string | null | Record<string, any>;
+  list?(key: string, v: ListValidator, value: any): string | null | Record<string, any>;
+  listof?(key: string, v: ListofValidator, value: any): string | null | Record<string, any>;
+  record?(key: string, v: RecordValidator, value: any): string | null | Record<string, any>;
+  recordof?(key: string, v: RecordofValidator, value: any): string | null | Record<string, any>;
 }
 
 type VisitorFunction = (
+  key: string,
   v: Validator,
   value: any
 ) => ReturnType<NonNullable<Visitor[keyof Visitor]>>;
 
-function enter(validator: Validator, visitor: Visitor, value: any, eager = false) {
+function enter(_: string, validator: Validator, visitor: Visitor, value: any, eager = false) {
   const cb = visitor[validator.type] as VisitorFunction;
-  if (typeof cb != 'function') return null;
 
-  let result = cb(validator, value);
+  let result = typeof cb == 'function' ? cb(_, validator, value) : null;
 
   if ((!!result && eager) || result != null) return result;
 
   result = {};
 
-  if (validator.type == list || validator.type == record) {
-    const shape = validator.shape;
+  if (validator.type == $list || validator.type == $record) {
+    const shape = toObj(validator.shape);
     const keys = ObjectKeys(shape);
     const values = toObj(value);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(
-        Array.isArray(shape) ? shape[i] : shape[keys[i]],
-        visitor,
-        values[keys[i]],
-        eager
-      );
+      const currentResult = enter(keys[i], shape[keys[i]], visitor, values[keys[i]], eager);
       if (shouldAddToResult(currentResult)) {
         result[keys[i]] = currentResult;
         if (eager) return result;
@@ -73,11 +68,11 @@ function enter(validator: Validator, visitor: Visitor, value: any, eager = false
     }
   }
 
-  if (validator.type == listof || validator.type == recordof) {
+  if (validator.type == $listof || validator.type == $recordof) {
     const values = toObj(value);
     const keys = ObjectKeys(values);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(validator.of, visitor, values[keys[i]], eager);
+      const currentResult = enter(keys[i], validator.of, visitor, values[keys[i]], eager);
       if (shouldAddToResult(currentResult)) {
         result[keys[i]] = currentResult;
         if (eager) return result;
@@ -100,7 +95,7 @@ export function traverse<T>(
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
     const value = isPlainObject(data) ? data[schemaKey] : undefined;
-    let result = enter(validator, visitor, value, eager);
+    let result = enter(schemaKey as string, validator, visitor, value, eager);
     if (shouldAddToResult(result)) {
       parent[schemaKey] = result;
       if (eager) return parent;

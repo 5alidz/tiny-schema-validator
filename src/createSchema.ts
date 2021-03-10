@@ -1,13 +1,13 @@
 import { isPlainObject, ObjectKeys } from './utils';
 import { createErrors } from './createErrors';
-import { DATAERR, record, SCHEMAERR } from './constants';
+import { DATAERR, $record, SCHEMAERR } from './constants';
 import invariant from 'tiny-invariant';
 import { RecordValidator } from './validatorTypes';
 import { SchemaFrom, ErrorsFrom } from './type-utils';
+import { traverse as _traverse, Visitor } from './traverse';
 
 export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFrom<T>) {
   invariant(isPlainObject(_schema), SCHEMAERR);
-  // copy schema to ensure the correctness of the validation
   const schema = Object.freeze({ ..._schema });
 
   function validate(data: any, eager = false) {
@@ -21,7 +21,7 @@ export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFr
   }
 
   function embed(config = { optional: false }): RecordValidator {
-    return { type: record, shape: schema, ...config };
+    return { type: $record, shape: schema, ...config };
   }
 
   function produce(data: any): T {
@@ -29,10 +29,15 @@ export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFr
     return data;
   }
 
+  function traverse(visitor: Visitor, data?: any, eager?: boolean) {
+    return _traverse(schema, visitor, data, eager);
+  }
+
   return {
     validate,
     embed,
     produce,
     is,
+    traverse,
   };
 }

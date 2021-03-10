@@ -10,16 +10,6 @@ const createString = (length: number, char?: string) => {
 };
 
 describe('createSchema throws when', () => {
-  test('schema has error', () => {
-    expect(() =>
-      createSchema({
-        o: _.record({
-          // @ts-expect-error
-          o2: _.recordof(_.string({ maxLength: [true, 42] })),
-        }),
-      })
-    ).toThrow();
-  });
   test('passed invalid schema', () => {
     // @ts-expect-error
     expect(() => createSchema<{ data: null }>(null)).toThrow();
@@ -28,17 +18,25 @@ describe('createSchema throws when', () => {
     // @ts-expect-error
     expect(() => createSchema([])).toThrow();
   });
-  test('passed a validator that is not a plain object', () => {
-    expect(() =>
-      // @ts-expect-error
-      createSchema({ name: null, age: { n: null } }).validate({ name: 'hello' })
-    ).toThrow();
-    // @ts-expect-error
-    expect(() => createSchema({ name: undefined }).validate({ name: 'hello' })).toThrow();
-    // @ts-expect-error
-    expect(() => createSchema({ name: [] }).validate({ name: 'hello' })).toThrow();
-    // @ts-expect-error
-    expect(() => createSchema({ o: { x: null } }).validate({})).toThrow();
+});
+
+describe('eager validation', () => {
+  const s = createSchema({
+    a: _.record({ b: _.string(), c: _.record({ d: _.number(), e: _.number() }) }),
+  });
+
+  const form = s.traverse({
+    string() {
+      return { type: 'text', className: 'input' };
+    },
+    number(key) {
+      return { type: 'number', className: `number-input ${key == 'd' ? 'red-500' : ''}` };
+    },
+  });
+  console.log(JSON.stringify(form, null, 2));
+
+  test('test 1', () => {
+    expect(s.validate({ a: { b: 42, c: false } }, true)).toStrictEqual({ a: { b: TYPEERR } });
   });
 });
 
@@ -135,6 +133,7 @@ describe('number validator', () => {
       optional: conf?.optional,
       max: [10, 'too-large'],
       min: [1, 'too-small'],
+      is: ['integer', 'wrong-type-of-number'],
     });
   const Person1 = createSchema({
     age: age({ optional: true }),
@@ -183,9 +182,15 @@ describe('number validator', () => {
     expect(Person1.is({ age: 10 })).toBe(true);
   });
 
+  test('is', () => {
+    expect(Person1.is({ age: 9.4 })).toBe(false);
+    expect(Person1.is({ age: 10 })).toBe(true);
+  });
+
   test('emits correct error message', () => {
     expect(Person1.validate({ age: 11 })).toStrictEqual({ age: 'too-large' });
     expect(Person1.validate({ age: -1 })).toStrictEqual({ age: 'too-small' });
+    expect(Person1.validate({ age: 9.4 })).toStrictEqual({ age: 'wrong-type-of-number' });
   });
 });
 
@@ -232,6 +237,20 @@ describe('listof validator', () => {
     expect(Person.validate({ friends: [] })).toStrictEqual(null);
     expect(Person.validate({ friends: {} })).toStrictEqual({ friends: TYPEERR });
     expect(Person.validate({ friends: [1, 'john'] })).toStrictEqual({ friends: { 0: TYPEERR } });
+  });
+});
+
+describe('list validator', () => {
+  const Person = createSchema({
+    friends: _.list([_.string(), _.number()]),
+  });
+  test('emits correct error messages', () => {
+    expect(Person.validate({ friends: [] })).toStrictEqual({ friends: { 0: TYPEERR, 1: TYPEERR } });
+    expect(Person.validate({ friends: {} })).toStrictEqual({ friends: TYPEERR });
+    expect(Person.validate({ friends: [1, 'john'] })).toStrictEqual({
+      friends: { 0: TYPEERR, 1: TYPEERR },
+    });
+    expect(Person.validate({ friends: ['john', 0] })).toStrictEqual(null);
   });
 });
 

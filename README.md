@@ -3,7 +3,11 @@
 ## Installation
 
 ```sh
-npm i tiny-schema-validator
+# npm
+npm install tiny-schema-validator
+
+#yarn
+yarn add tiny-schema-validator
 ```
 
 ### Example
@@ -58,10 +62,11 @@ The helpers this package provides are:
 
 - `string`
 - `number`
-- `bool`
+- `boolean`
+- `list`
+- `listof`
 - `record`
 - `recordof`
-- `listof`
 
 These helpers are functions that return a validator that the schema understands. Take a look at the example below for all the possible options:
 
@@ -77,13 +82,16 @@ _.number({
   optional: true, // default is false
   max: [100, 'too-big'],
   min: [0, 'too-small'],
+  is: ['integer', 'float-not-allowed'], // 'integer' | 'float' -> default is both
 });
 
-_.bool({
+_.boolean({
   optional: true, // default is false
 });
 
-_.listof(_.string() /* validator (from `_`) */, { optional: true });
+_.list([_.string(), _.number()], { optional: true /* default is false */ });
+
+_.listof(_.string(), { optional: true /* default is false */ });
 
 _.record(
   {
@@ -94,5 +102,5 @@ _.record(
   { optional: true }
 );
 
-_.recordof(_.string() /* validator */, { optional: true });
+_.recordof(_.string(), { optional: true });
 ```
