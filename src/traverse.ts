@@ -58,8 +58,9 @@ function enter(
   eager = false
 ) {
   const cb = visitor[validator.type] as VisitorFunction;
+  const currentPath = `${path == null ? '' : `${path}.`}${nodeKey}`;
 
-  let result = typeof cb == 'function' ? cb(path, nodeKey, validator, value) : null;
+  let result = typeof cb == 'function' ? cb(currentPath, nodeKey, validator, value) : null;
 
   if ((!!result && eager) || result != null) return result;
 
@@ -71,7 +72,7 @@ function enter(
     const values = toObj(value);
     for (let i = 0; i < keys.length; i++) {
       const currentResult = enter(
-        `${path == null ? '' : `${path}.`}${nodeKey}.${keys[i]}`,
+        currentPath,
         keys[i],
         shape[keys[i]],
         visitor,
@@ -90,7 +91,7 @@ function enter(
     const keys = ObjectKeys(values);
     for (let i = 0; i < keys.length; i++) {
       const currentResult = enter(
-        `${path == null ? '' : `${path}.`}${nodeKey}.${keys[i]}`,
+        currentPath,
         keys[i],
         validator.of,
         visitor,
