@@ -31,25 +31,68 @@ function toObj(value: any) {
 }
 
 export interface Visitor {
-  string?(key: string, v: StringValidator, value: any): string | null | Record<string, any>;
-  number?(key: string, v: NumberValidator, value: any): string | null | Record<string, any>;
-  boolean?(key: string, v: BooleanValidator, value: any): string | null | Record<string, any>;
-  list?(key: string, v: ListValidator, value: any): string | null | Record<string, any>;
-  listof?(key: string, v: ListofValidator, value: any): string | null | Record<string, any>;
-  record?(key: string, v: RecordValidator, value: any): string | null | Record<string, any>;
-  recordof?(key: string, v: RecordofValidator, value: any): string | null | Record<string, any>;
+  string?(
+    parent: string | null,
+    key: string,
+    v: StringValidator,
+    value: any
+  ): string | null | Record<string, any>;
+  number?(
+    parent: string | null,
+    key: string,
+    v: NumberValidator,
+    value: any
+  ): string | null | Record<string, any>;
+  boolean?(
+    parent: string | null,
+    key: string,
+    v: BooleanValidator,
+    value: any
+  ): string | null | Record<string, any>;
+  list?(
+    parent: string | null,
+    key: string,
+    v: ListValidator,
+    value: any
+  ): string | null | Record<string, any>;
+  listof?(
+    parent: string | null,
+    key: string,
+    v: ListofValidator,
+    value: any
+  ): string | null | Record<string, any>;
+  record?(
+    parent: string | null,
+    key: string,
+    v: RecordValidator,
+    value: any
+  ): string | null | Record<string, any>;
+  recordof?(
+    parent: string | null,
+    key: string,
+    v: RecordofValidator,
+    value: any
+  ): string | null | Record<string, any>;
 }
 
 type VisitorFunction = (
+  parent: string | null,
   key: string,
   v: Validator,
   value: any
 ) => ReturnType<NonNullable<Visitor[keyof Visitor]>>;
 
-function enter(_: string, validator: Validator, visitor: Visitor, value: any, eager = false) {
+function enter(
+  parentNodeKey: string | null,
+  nodeKey: string,
+  validator: Validator,
+  visitor: Visitor,
+  value: any,
+  eager = false
+) {
   const cb = visitor[validator.type] as VisitorFunction;
 
-  let result = typeof cb == 'function' ? cb(_, validator, value) : null;
+  let result = typeof cb == 'function' ? cb(parentNodeKey, nodeKey, validator, value) : null;
 
   if ((!!result && eager) || result != null) return result;
 
@@ -60,7 +103,14 @@ function enter(_: string, validator: Validator, visitor: Visitor, value: any, ea
     const keys = ObjectKeys(shape);
     const values = toObj(value);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(keys[i], shape[keys[i]], visitor, values[keys[i]], eager);
+      const currentResult = enter(
+        nodeKey,
+        keys[i],
+        shape[keys[i]],
+        visitor,
+        values[keys[i]],
+        eager
+      );
       if (shouldAddToResult(currentResult)) {
         result[keys[i]] = currentResult;
         if (eager) return result;
@@ -72,7 +122,7 @@ function enter(_: string, validator: Validator, visitor: Visitor, value: any, ea
     const values = toObj(value);
     const keys = ObjectKeys(values);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(keys[i], validator.of, visitor, values[keys[i]], eager);
+      const currentResult = enter(nodeKey, keys[i], validator.of, visitor, values[keys[i]], eager);
       if (shouldAddToResult(currentResult)) {
         result[keys[i]] = currentResult;
         if (eager) return result;
@@ -95,7 +145,7 @@ export function traverse<T>(
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
     const value = isPlainObject(data) ? data[schemaKey] : undefined;
-    let result = enter(schemaKey as string, validator, visitor, value, eager);
+    let result = enter(null, schemaKey as string, validator, visitor, value, eager);
     if (shouldAddToResult(result)) {
       parent[schemaKey] = result;
       if (eager) return parent;
