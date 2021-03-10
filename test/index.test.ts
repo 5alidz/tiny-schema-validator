@@ -26,11 +26,11 @@ describe('eager validation', () => {
   });
 
   const form = s.traverse({
-    string() {
-      return { type: 'text', className: 'input' };
+    string(path) {
+      return { path, type: 'text', className: 'input' };
     },
-    number(key) {
-      return { type: 'number', className: `number-input ${key == 'd' ? 'red-500' : ''}` };
+    number(path, key) {
+      return { path, type: 'number', className: `number-input ${key == 'd' ? 'red-500' : ''}` };
     },
   });
   console.log(JSON.stringify(form, null, 2));

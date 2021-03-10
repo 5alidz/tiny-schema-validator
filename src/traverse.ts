@@ -30,60 +30,27 @@ function toObj(value: any) {
     : ({} as Record<string, any>);
 }
 
+type IVisitor<T> = (
+  path: string | null,
+  key: string,
+  v: T,
+  value: any
+) => string | null | Record<string, any>;
+
 export interface Visitor {
-  string?(
-    parent: string | null,
-    key: string,
-    v: StringValidator,
-    value: any
-  ): string | null | Record<string, any>;
-  number?(
-    parent: string | null,
-    key: string,
-    v: NumberValidator,
-    value: any
-  ): string | null | Record<string, any>;
-  boolean?(
-    parent: string | null,
-    key: string,
-    v: BooleanValidator,
-    value: any
-  ): string | null | Record<string, any>;
-  list?(
-    parent: string | null,
-    key: string,
-    v: ListValidator,
-    value: any
-  ): string | null | Record<string, any>;
-  listof?(
-    parent: string | null,
-    key: string,
-    v: ListofValidator,
-    value: any
-  ): string | null | Record<string, any>;
-  record?(
-    parent: string | null,
-    key: string,
-    v: RecordValidator,
-    value: any
-  ): string | null | Record<string, any>;
-  recordof?(
-    parent: string | null,
-    key: string,
-    v: RecordofValidator,
-    value: any
-  ): string | null | Record<string, any>;
+  string?: IVisitor<StringValidator>;
+  number?: IVisitor<NumberValidator>;
+  boolean?: IVisitor<BooleanValidator>;
+  list?: IVisitor<ListValidator>;
+  listof?: IVisitor<ListofValidator>;
+  record?: IVisitor<RecordValidator>;
+  recordof?: IVisitor<RecordofValidator>;
 }
 
-type VisitorFunction = (
-  parent: string | null,
-  key: string,
-  v: Validator,
-  value: any
-) => ReturnType<NonNullable<Visitor[keyof Visitor]>>;
+type VisitorFunction = IVisitor<Validator>;
 
 function enter(
-  parentNodeKey: string | null,
+  path: string | null,
   nodeKey: string,
   validator: Validator,
   visitor: Visitor,
@@ -92,7 +59,7 @@ function enter(
 ) {
   const cb = visitor[validator.type] as VisitorFunction;
 
-  let result = typeof cb == 'function' ? cb(parentNodeKey, nodeKey, validator, value) : null;
+  let result = typeof cb == 'function' ? cb(path, nodeKey, validator, value) : null;
 
   if ((!!result && eager) || result != null) return result;
 
@@ -104,7 +71,7 @@ function enter(
     const values = toObj(value);
     for (let i = 0; i < keys.length; i++) {
       const currentResult = enter(
-        nodeKey,
+        `${path == null ? '' : `${path}.`}${nodeKey}.${keys[i]}`,
         keys[i],
         shape[keys[i]],
         visitor,
@@ -122,7 +89,14 @@ function enter(
     const values = toObj(value);
     const keys = ObjectKeys(values);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(nodeKey, keys[i], validator.of, visitor, values[keys[i]], eager);
+      const currentResult = enter(
+        `${path == null ? '' : `${path}.`}${nodeKey}.${keys[i]}`,
+        keys[i],
+        validator.of,
+        visitor,
+        values[keys[i]],
+        eager
+      );
       if (shouldAddToResult(currentResult)) {
         result[keys[i]] = currentResult;
         if (eager) return result;
