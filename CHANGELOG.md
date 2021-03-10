@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1-alpha.3](https://github.com/5alidz/tiny-schema-validator/compare/v2.0.1-alpha.2...v2.0.1-alpha.3) (2021-03-10)
+
+
+### Bug Fixes
+
+* expose parentkey ([d6d4302](https://github.com/5alidz/tiny-schema-validator/commit/d6d43028f858983b4f74cfeb2908693c56465ded))
+
 ### [2.0.1-alpha.2](https://github.com/5alidz/tiny-schema-validator/compare/v2.0.1-alpha.1...v2.0.1-alpha.2) (2021-03-10)
 
 
