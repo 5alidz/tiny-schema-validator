@@ -31,7 +31,7 @@ function toObj(value: any) {
 }
 
 type IVisitor<T> = (
-  path: string | null,
+  path: string[],
   key: string,
   v: T,
   value: any
@@ -50,7 +50,7 @@ export interface Visitor {
 type VisitorFunction = IVisitor<Validator>;
 
 function enter(
-  path: string | null,
+  path: string[],
   nodeKey: string,
   validator: Validator,
   visitor: Visitor,
@@ -58,7 +58,7 @@ function enter(
   eager = false
 ) {
   const cb = visitor[validator.type] as VisitorFunction;
-  const currentPath = `${path == null ? '' : `${path}.`}${nodeKey}`;
+  const currentPath = [...path, nodeKey];
 
   let result = typeof cb == 'function' ? cb(currentPath, nodeKey, validator, value) : null;
 
@@ -120,7 +120,7 @@ export function traverse<T>(
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
     const value = isPlainObject(data) ? data[schemaKey] : undefined;
-    let result = enter(null, schemaKey as string, validator, visitor, value, eager);
+    let result = enter([], schemaKey as string, validator, visitor, value, eager);
     if (shouldAddToResult(result)) {
       parent[schemaKey] = result;
       if (eager) return parent;
