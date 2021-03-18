@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0-alpha.2](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2021-03-18)
+
+
+### Bug Fixes
+
+* expose validatorTypes with index.d.ts ([796990d](https://github.com/5alidz/tiny-schema-validator/commit/796990d543de176332973ef198b33e5d8a48ea1d))
+
 ## [2.1.0-alpha.1](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.0...v2.1.0-alpha.1) (2021-03-11)
 
 
