@@ -51,8 +51,7 @@ export function createErrors<T>(schema: { [K in keyof T]: Validator }, data: T, 
           const [is, isErrMsg] = validator.is ? validator.is : [];
           if (isString(is) && isErrMsg) {
             const isInt = Number.isInteger(value);
-            if (isInt && is == 'float') return isErrMsg;
-            if (!isInt && is == 'integer') return isErrMsg;
+            if ((isInt && is == 'float') || (!isInt && is == 'integer')) return isErrMsg;
           }
 
           return null;

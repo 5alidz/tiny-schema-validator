@@ -1,4 +1,25 @@
-import { InferValidator } from './validatorTypes';
+import {
+  BooleanValidator,
+  ListValidator,
+  ListofValidator,
+  NumberValidator,
+  RecordValidator,
+  RecordofValidator,
+  StringValidator,
+  Validator,
+} from './validatorTypes';
+
+type InferValidator<T> = T extends string
+  ? StringValidator
+  : T extends number
+  ? NumberValidator
+  : T extends boolean
+  ? BooleanValidator
+  : T extends Array<any>
+  ? ListValidator | ListofValidator
+  : T extends object
+  ? RecordValidator | RecordofValidator
+  : Validator;
 
 export type IsPlainObject<T, U> = T extends object ? (T extends Array<any> ? never : U) : never;
 

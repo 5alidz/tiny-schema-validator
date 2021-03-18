@@ -50,15 +50,3 @@ export type Validator =
   | ListofValidator
   | RecordValidator
   | RecordofValidator;
-
-export type InferValidator<T> = T extends string
-  ? StringValidator
-  : T extends number
-  ? NumberValidator
-  : T extends boolean
-  ? BooleanValidator
-  : T extends Array<any>
-  ? ListValidator | ListofValidator
-  : T extends object
-  ? RecordValidator | RecordofValidator
-  : Validator;
