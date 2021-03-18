@@ -1,11 +1,9 @@
-import { createSchema, _ } from '../src/index';
+import { createSchema, Validator, _ } from '../src/index';
 import { TYPEERR } from '../src/constants';
 
 const createString = (length: number, char?: string) => {
   let s = '';
-  for (let i = 0; i < length; i++) {
-    s += char || ' ';
-  }
+  for (let i = 0; i < length; i++) s += char || ' ';
   return s;
 };
 
@@ -24,16 +22,6 @@ describe('eager validation', () => {
   const s = createSchema({
     a: _.record({ b: _.string(), c: _.record({ d: _.number(), e: _.number() }) }),
   });
-
-  const form = s.traverse({
-    string(path) {
-      return { path, type: 'text', className: 'input' };
-    },
-    number(path, key) {
-      return { path, type: 'number', className: `number-input ${key == 'd' ? 'red-500' : ''}` };
-    },
-  });
-  console.log(JSON.stringify(form, null, 2));
 
   test('test 1', () => {
     expect(s.validate({ a: { b: 42, c: false } }, true)).toStrictEqual({ a: { b: TYPEERR } });
@@ -316,5 +304,86 @@ describe('recordof validator', () => {
         },
       })
     ).toStrictEqual({ people: { sarah: { age: TYPEERR } } });
+  });
+});
+
+describe('traverse', () => {
+  const Person = createSchema({
+    id: _.string(),
+    created: _.number(),
+    updated: _.number(),
+    profile: _.record({ username: _.string(), email: _.string(), age: _.number() }),
+  });
+
+  test('custom traverse', () => {
+    const customTraverse = (key: string, validator: Validator) => {
+      if (validator.type == 'string') {
+        return { type: key == 'email' ? key : 'text', label: key };
+      } else if (validator.type == 'number') {
+        return { type: 'number', label: key };
+      } else if (validator.type == 'record') {
+        return Object.entries(validator.shape).reduce((acc, [shapeKey, shapeValidator]) => {
+          acc[shapeKey] = customTraverse(shapeKey, shapeValidator);
+          return acc;
+        }, {} as Record<string, any>);
+      } else {
+        return null;
+      }
+    };
+
+    const profileFormInputsData = Person.traverse({
+      record(_, key, validator) {
+        return customTraverse(key, validator);
+      },
+    });
+
+    expect(profileFormInputsData).toStrictEqual({
+      profile: {
+        username: { type: 'text', label: 'username' },
+        email: { type: 'email', label: 'email' },
+        age: { type: 'number', label: 'age' },
+      },
+    });
+  });
+
+  test('readme example 2', () => {
+    const profileFormInputsData = Person.traverse({
+      number(path, key) {
+        if (path.includes('profile')) return { type: 'number', label: key };
+        return null; // otherwise ignore
+      },
+      string(path, key) {
+        if (path.includes('profile')) return { type: 'text', label: key };
+        return null; // otherwise ignore
+      },
+      record() {
+        return 'ignore children';
+      },
+    });
+
+    expect(profileFormInputsData).toStrictEqual({
+      profile: 'ignore children',
+    });
+  });
+
+  test('readme example', () => {
+    const profileFormInputsData = Person.traverse({
+      number(path, key) {
+        if (path.includes('profile')) return { type: 'number', label: key };
+        return null; // otherwise ignore
+      },
+      string(path, key) {
+        if (path.includes('profile')) return { type: 'text', label: key };
+        return null; // otherwise ignore
+      },
+    });
+
+    expect(profileFormInputsData).toStrictEqual({
+      profile: {
+        username: { type: 'text', label: 'username' },
+        email: { type: 'text', label: 'email' },
+        age: { type: 'number', label: 'age' },
+      },
+    });
   });
 });
