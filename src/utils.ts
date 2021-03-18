@@ -4,10 +4,6 @@ export const isString = (value: unknown): value is string => typeof value == 'st
 export const isNumber = (value: unknown): value is number =>
   typeof value == 'number' && !isNaN(value as number) && Number.isFinite(value);
 
-export const UnknownKey = Symbol.for('gssu5l');
-
-export const safeSpread = <T extends object>(o?: T) => (o ? o : {});
-
 export function isPlainObject(maybeObject: any): maybeObject is Record<string, any> {
   return (
     typeof maybeObject == 'object' &&
