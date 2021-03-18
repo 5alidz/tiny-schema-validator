@@ -10,8 +10,6 @@ npm install tiny-schema-validator
 yarn add tiny-schema-validator
 ```
 
-### Example
-
 #### Basic Example
 
 ```js
@@ -38,7 +36,7 @@ import { Person } from 'models/person';
 
 export const Group = createSchema({
   // ...
-  people: _.listof(Person.embed({ optional: true })),
+  people: _.listof(Person.embed()),
   // ...
 });
 ```
@@ -53,54 +51,163 @@ When you create a schema with `createSchema` it returns a nice API designed to h
 - `validate` get errors, use for form validation
 - `produce` create data that matches the schema. if it doesn't match, it will throw an error
 - `embed` embeds itself in other schemas
+- `traverse` (advanced) used by tools like `tiny-schema-form`
 
 For usage, take a look at [the basic example](#basic-example)
 
 #### Validators
 
-The helpers this package provides are:
-
-- `string`
-- `number`
-- `boolean`
-- `list`
-- `listof`
-- `record`
-- `recordof`
-
-These helpers are functions that return a validator that the schema understands. Take a look at the example below for all the possible options:
+All validators are accessible with the `_` (underscore) namespace; The reason for using `_` instead of a good name like `validators` is developer experience, and you can alias it to whatever you want.
 
 ```js
-_.string({
-  optional: true, // default is false
-  maxLength: [100, 'too-long'], // [value, errMessage]
-  minLength: [0, 'too-short'],
-  pattern: [/\w+/, 'invalid-pattern'],
+import { _ as validators } from 'tiny-schema-validator';
+
+validators.string(); // creates a string validator
+```
+
+Checkout the full validators API below:
+
+| validator | signature                       | props                                                        |
+| :-------- | ------------------------------- | :----------------------------------------------------------- |
+| string    | `string(options?)`              | options (optional): Object                                   |
+|           |                                 | - `optional` boolean defaults to false                       |
+|           |                                 | - `maxLength` [length: number, error: string]                |
+|           |                                 | - `minLength` [length: number, error: string]                |
+|           |                                 | - `pattern` [pattern: RegExp, error: string]                 |
+|           |                                 |                                                              |
+| number    | `number(options?)`              | options(optional): Object                                    |
+|           |                                 | - `optional` boolean default to false                        |
+|           |                                 | - `min` [number, error: string]                              |
+|           |                                 | - `max` [number, error: string]                              |
+|           |                                 | - `is` ['integer' \| 'float', error: string] default is both |
+|           |                                 |                                                              |
+| boolean   |                                 | - `optional` boolean default to false                        |
+|           |                                 |                                                              |
+| list      | `list(validators[], options?)`  | validators: Array of validators                              |
+|           |                                 | options(optional): Object                                    |
+|           |                                 | - `optional` boolean default to false                        |
+|           |                                 |                                                              |
+| listof    | `listof(validator, options?)`   | validator: Validator                                         |
+|           |                                 | options(optional): Object                                    |
+|           |                                 | - `optional` boolean default to false                        |
+|           |                                 |                                                              |
+| record    | `record(shape, options?)`       | shape: Object `{ [key: string]: Validator }`                 |
+|           |                                 | options(optional): Object                                    |
+|           |                                 | - `optional` boolean default to false                        |
+|           |                                 |                                                              |
+| recordof  | `recordof(validator, options?)` | validator: Validator                                         |
+|           |                                 | options(optional): Object                                    |
+|           |                                 | - `optional` boolean default to false                        |
+
+#### Caveats
+
+- When using the `recordof | listof | list` validators, the optional property of the validator is ignored, example:
+
+```js
+_.recordof(_.string({ optional: true /* THIS IS IGNORED */ }));
+_.list([_.number({ optional: true /* THIS IS IGNORED */ }), _.number()]);
+```
+
+### (Advanced) Traversing the schema
+
+This package was built with the intention of reusing the schema in other tools, like generating TypeScript types for example, and traverse helps you achieve that.
+
+##### Signature
+
+```ts
+type ConfigFunction = (
+  path: string[],
+  key: string,
+  validator: Validator
+) => null | string | { [key: string]: any };
+
+type Config = {
+  string?: ConfigFunction;
+  number?: ConfigFunction;
+  boolean?: ConfigFunction;
+  list?: ConfigFunction;
+  listof?: ConfigFunction;
+  record?: ConfigFunction;
+  recordof?: ConfigFunction;
+};
+
+type Traverse = <Schema>(config: Config, data?: any, eager?: boolean) => DataFromSchema<Schema>;
+```
+
+And here's a simple example of a traverser
+
+```js
+const Person = createSchema({
+  id: _.string(),
+  created: _.number(),
+  updated: _.number(),
+  profile: _.record({ username: _.string(), email: _.string(), age: _.number() }),
 });
 
-_.number({
-  optional: true, // default is false
-  max: [100, 'too-big'],
-  min: [0, 'too-small'],
-  is: ['integer', 'float-not-allowed'], // 'integer' | 'float' -> default is both
-});
-
-_.boolean({
-  optional: true, // default is false
-});
-
-_.list([_.string(), _.number()], { optional: true /* default is false */ });
-
-_.listof(_.string(), { optional: true /* default is false */ });
-
-_.record(
-  {
-    /* { [key]: validator }*/
-    prop1: _.string(),
-    prop2: _.number(),
+const form_ui = Person.traverse({
+  number(path, key) {
+    if (path.includes('profile')) return { type: 'number', label: key };
+    return null; // otherwise ignore
   },
-  { optional: true }
-);
+  string(path, key) {
+    if (path.includes('profile')) return { type: 'text', label: key };
+    return null; // otherwise ignore
+  },
+});
 
-_.recordof(_.string(), { optional: true });
+console.log(form_ui);
+/* 
+  {
+    profile: {
+      username: { type: 'text', label: 'username' },
+      email: { type: 'text', label: 'email' },
+      age: { type: 'number', label: 'age' }
+    }
+  }
+*/
+```
+
+NOTE: When parsing `record | recordof | list | listof` make sure to return `null` so the traverse function continue down to all nested validators, otherwise you will need to create your own custom traverser.
+
+example make custom traverser for records:
+
+```js
+const Person = createSchema({
+  id: _.string(),
+  created: _.number(),
+  updated: _.number(),
+  profile: _.record({ username: _.string(), email: _.string(), age: _.number() }),
+});
+
+const customTraverse = (key, validator) => {
+  if (validator.type == 'string') {
+    return { type: key == 'email' ? key : 'text', label: key };
+  } else if (validator.type == 'number') {
+    return { type: 'number', label: key };
+  } else if (validator.type == 'record') {
+    return Object.entries(validator.shape).reduce((acc, [shapeKey, shapeValidator]) => {
+      acc[shapeKey] = customTraverse(shapeKey, shapeValidator);
+      return acc;
+    }, {});
+  } else {
+    return null;
+  }
+};
+
+const form_ui = Person.traverse({
+  record(_, key, validator) {
+    return customTraverse(key, validator);
+  },
+});
+
+console.log(form_ui);
+/* 
+  {
+    profile: {
+      username: { type: 'text', label: 'username' },
+      email: { type: 'email', label: 'email' },
+      age: { type: 'number', label: 'age' },
+    }
+  }
+*/
 ```
