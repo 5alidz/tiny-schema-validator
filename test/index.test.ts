@@ -315,7 +315,44 @@ describe('traverse', () => {
     profile: _.record({ username: _.string(), email: _.string(), age: _.number() }),
   });
 
-  test('custom traverse', () => {
+  test('custom traverse 1', () => {
+    const customTraverse = (key: string, validator: Validator) => {
+      if (validator.type == 'string') {
+        return { type: key == 'email' ? key : 'text', label: key };
+      } else if (validator.type == 'number') {
+        return { type: 'number', label: key };
+      } else if (validator.type == 'record') {
+        return {
+          type: 'container',
+          children: Object.entries(validator.shape).reduce((acc, [shapeKey, shapeValidator]) => {
+            acc[shapeKey] = customTraverse(shapeKey, shapeValidator); // visit children
+            return acc;
+          }, {} as Record<string, any>),
+        };
+      } else {
+        return null;
+      }
+    };
+
+    const data = Person.traverse({
+      record(_, key, validator) {
+        return customTraverse(key, validator);
+      },
+    });
+
+    expect(data).toStrictEqual({
+      profile: {
+        type: 'container',
+        children: {
+          username: { type: 'text', label: 'username' },
+          email: { type: 'email', label: 'email' },
+          age: { type: 'number', label: 'age' },
+        },
+      },
+    });
+  });
+
+  test('custom traverse 2', () => {
     const customTraverse = (key: string, validator: Validator) => {
       if (validator.type == 'string') {
         return { type: key == 'email' ? key : 'text', label: key };
