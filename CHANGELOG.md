@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0-alpha.3](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.2...v2.1.0-alpha.3) (2021-03-19)
+
 ## [2.1.0-alpha.2](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2021-03-18)
 
 
