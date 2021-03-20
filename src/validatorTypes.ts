@@ -9,7 +9,6 @@ interface StringOptions {
   minLength?: [number, string];
   maxLength?: [number, string];
   pattern?: [RegExp, string];
-  oneOf?: string[];
 }
 
 interface NumberOptions {

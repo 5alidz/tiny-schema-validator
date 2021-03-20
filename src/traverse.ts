@@ -35,7 +35,7 @@ type IVisitor<T> = (
   key: string,
   v: T,
   value: any
-) => string | null | Record<string, any>;
+) => string | null | any[] | Record<string, any>;
 
 export interface Visitor {
   string?: IVisitor<StringValidator>;
@@ -108,14 +108,22 @@ function enter(
   return ObjectKeys(result).length > 0 ? result : null;
 }
 
+type Schema = { [key: string]: Validator };
+type SchemaFrom<T> = {
+  [K in keyof T]: Validator;
+};
+type FromTraverse<S extends Schema> = {
+  [K in keyof S]: ReturnType<VisitorFunction>;
+};
+
 export function traverse<T>(
-  schema: { [K in keyof T]: Validator },
+  schema: SchemaFrom<T>,
   visitor: Visitor,
   data: T,
   eager = false
-) {
+): Partial<FromTraverse<SchemaFrom<T>>> {
   const schemaKeys = ObjectKeys(schema) as (keyof T)[];
-  const parent = {} as Record<keyof T, any>;
+  const parent = {} as Partial<FromTraverse<SchemaFrom<T>>>;
   for (let i = 0; i < schemaKeys.length; i++) {
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
