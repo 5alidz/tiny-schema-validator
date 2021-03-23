@@ -51,28 +51,31 @@ export function number(opts?: NumberOptions): NumberValidator {
   };
 }
 
-export function list<V extends Validator>(shape: V[], opts?: ListOptions): ListValidator {
+export function list<V extends Validator[]>(shape: V, opts?: ListOptions): ListValidator {
   return {
     ...base($list, optional(opts?.optional)),
     shape,
   };
 }
 
-export function listof(of: Validator, opts?: ListofOptions): ListofValidator {
+export function listof<V extends Validator>(of: V, opts?: ListofOptions): ListofValidator {
   return {
     ...base($listof, optional(opts?.optional)),
     of,
   };
 }
 
-export function record(shape: { [key: string]: Validator }, opts?: RecordOptions): RecordValidator {
+export function record<S extends { [key: string]: Validator }>(
+  shape: S,
+  opts?: RecordOptions
+): RecordValidator {
   return {
     ...base($record, optional(opts?.optional)),
     shape,
   };
 }
 
-export function recordof(of: Validator, opts?: RecordofOptions): RecordofValidator {
+export function recordof<V extends Validator>(of: V, opts?: RecordofOptions): RecordofValidator {
   return {
     ...base($recordof, optional(opts?.optional)),
     of,
