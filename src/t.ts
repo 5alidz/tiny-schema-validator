@@ -1,6 +1,6 @@
-type Opt<T> = T & { optional: true };
-type Req<T> = T & { optional: false };
-type V<T> = Opt<T> | Req<T>;
+type O<V> = V & { optional: true };
+type R<V> = V & { optional: false };
+type V<V> = O<V> | R<V>;
 
 interface StringOptions {
   type: 'string';
@@ -8,7 +8,6 @@ interface StringOptions {
   minLength?: [number, string];
   pattern?: [RegExp, string];
 }
-type StringValidator = V<StringOptions>;
 
 interface NumberOptions {
   type: 'number';
@@ -16,45 +15,47 @@ interface NumberOptions {
   min?: [number, string];
   is?: ['integer' | 'float', string];
 }
-type NumberValidator = V<NumberOptions>;
 
-interface BooleanValidator {
+interface BooleanOptions {
   type: 'boolean';
-  optional: boolean;
 }
 
-interface ListValidator<T extends Validator[]> {
+interface ListOptions<T> {
   type: 'list';
-  optional: boolean;
   shape: T;
 }
 
-interface ListofValidator<T extends Validator> {
+interface ListofOptions<T> {
   type: 'listof';
-  optional: boolean;
   of: T;
 }
 
-interface RecordValidator<T extends Schema> {
+interface RecordOptions<T> {
   type: 'record';
-  optional: boolean;
   shape: T;
 }
 
-interface RecordofValidator<T extends Validator> {
+interface RecordofOptions<T> {
   type: 'recordof';
-  optional: boolean;
   of: T;
 }
+
+type BooleanValidator = V<BooleanOptions>;
+type StringValidator = V<StringOptions>;
+type NumberValidator = V<NumberOptions>;
+type ListValidator<T extends Validator[]> = V<ListOptions<T>>;
+type ListofValidator<T extends Validator> = V<ListofOptions<T>>;
+type RecordValidator<T extends Schema> = V<RecordOptions<T>>;
+type RecordofValidator<T extends Validator> = V<RecordofOptions<T>>;
 
 type Validator =
   | StringValidator
   | NumberValidator
   | BooleanValidator
-  | ListofValidator<Validator>
-  | ListValidator<Validator[]>
-  | RecordValidator<Schema>
-  | RecordofValidator<Validator>;
+  | ListofValidator<any>
+  | ListValidator<any[]>
+  | RecordValidator<any>
+  | RecordofValidator<any>;
 
 interface Schema {
   [key: string]: Validator;
@@ -64,28 +65,29 @@ type DataFrom<S extends Schema> = {
   [K in keyof S]: InferDataType<S[K]>;
 };
 
-type InferTypeWithOptional<T, U> = T extends Opt<T> ? U | void : U;
+type InferTypeWithOptional<T, U> = T extends O<T> ? U | undefined : U;
 
 type InferDataType<T> = T extends StringValidator
   ? InferTypeWithOptional<T, string>
   : T extends NumberValidator
   ? InferTypeWithOptional<T, number>
   : T extends BooleanValidator
-  ? boolean
+  ? InferTypeWithOptional<T, boolean>
   : T extends ListValidator<infer U>
-  ? { [K in keyof U]: InferDataType<U[K]> }
+  ? InferTypeWithOptional<T, { [K in keyof U]: InferDataType<U[K]> }>
   : T extends ListofValidator<infer V>
-  ? InferDataType<V>[]
+  ? InferTypeWithOptional<T, InferDataType<V>[]>
   : T extends RecordValidator<infer S>
-  ? { [K in keyof S]: InferDataType<S[K]> }
+  ? InferTypeWithOptional<T, { [K in keyof S]: InferDataType<S[K]> }>
   : T extends RecordofValidator<infer V>
-  ? Record<string, InferDataType<V>>
+  ? InferTypeWithOptional<T, { [key: string]: InferDataType<V> }>
   : never;
 
-function string(config: { optional: true } & Omit<StringOptions, 'type'>): Opt<StringOptions>;
-function string(config: { optional: false } & Omit<StringOptions, 'type'>): Req<StringOptions>;
-function string(config: Omit<StringOptions, 'type'>): Req<StringOptions>;
-function string(): Req<StringOptions>;
+// helpers
+function string(config: { optional: true } & Omit<StringOptions, 'type'>): O<StringOptions>;
+function string(config: { optional: false } & Omit<StringOptions, 'type'>): R<StringOptions>;
+function string(config: Omit<StringOptions, 'type'>): R<StringOptions>;
+function string(): R<StringOptions>;
 function string(config?: { optional?: boolean } & Omit<StringOptions, 'type'>): StringValidator {
   return {
     type: 'string',
@@ -93,10 +95,10 @@ function string(config?: { optional?: boolean } & Omit<StringOptions, 'type'>): 
   };
 }
 
-function number(config: { optional: true } & Omit<NumberOptions, 'type'>): Opt<NumberOptions>;
-function number(config: { optional: false } & Omit<NumberOptions, 'type'>): Req<NumberOptions>;
-function number(config: Omit<NumberOptions, 'type'>): Req<NumberOptions>;
-function number(): Req<NumberOptions>;
+function number(config: { optional: true } & Omit<NumberOptions, 'type'>): O<NumberOptions>;
+function number(config: { optional: false } & Omit<NumberOptions, 'type'>): R<NumberOptions>;
+function number(config: Omit<NumberOptions, 'type'>): R<NumberOptions>;
+function number(): R<NumberOptions>;
 function number(config?: { optional?: boolean } & Omit<NumberOptions, 'type'>): NumberValidator {
   return {
     type: 'number',
@@ -104,32 +106,55 @@ function number(config?: { optional?: boolean } & Omit<NumberOptions, 'type'>): 
   };
 }
 
-const boolean = (config?: { optional: boolean }): BooleanValidator => ({
-  type: 'boolean',
-  optional: Boolean(config?.optional),
-});
+function boolean(config: { optional: true }): O<BooleanOptions>;
+function boolean(config: { optional: false }): R<BooleanOptions>;
+function boolean(): R<BooleanOptions>;
+function boolean(config?: { optional: boolean }): BooleanValidator {
+  return {
+    type: 'boolean',
+    optional: Boolean(config?.optional),
+  };
+}
 
-const list = <T extends Validator[]>(
-  list: T,
-  config?: { optional: boolean }
-): ListValidator<T> => ({ type: 'list', shape: list, optional: Boolean(config?.optional) });
+function list<T extends Validator[]>(list: T): R<ListOptions<T>>;
+function list<T extends Validator[]>(list: T, config: { optional: false }): R<ListOptions<T>>;
+function list<T extends Validator[]>(list: T, config: { optional: true }): O<ListOptions<T>>;
+function list<T extends Validator[]>(list: T, config?: { optional: boolean }): ListValidator<T> {
+  return { type: 'list', shape: list, optional: Boolean(config?.optional) };
+}
 
-const listof = <T extends Validator>(v: T, config?: { optional: boolean }): ListofValidator<T> => ({
-  type: 'listof',
-  of: v,
-  optional: Boolean(config?.optional),
-});
+function listof<T extends Validator>(v: T): R<ListofOptions<T>>;
+function listof<T extends Validator>(v: T, config: { optional: false }): R<ListofOptions<T>>;
+function listof<T extends Validator>(v: T, config: { optional: true }): O<ListofOptions<T>>;
+function listof<T extends Validator>(v: T, config?: { optional: boolean }): ListofValidator<T> {
+  return {
+    type: 'listof',
+    of: v,
+    optional: Boolean(config?.optional),
+  };
+}
 
-const record = <T extends Schema>(s: T, config?: { optional: boolean }): RecordValidator<T> => ({
-  type: 'record',
-  shape: s,
-  optional: Boolean(config?.optional),
-});
+function record<T extends Schema>(s: T): R<RecordOptions<T>>;
+function record<T extends Schema>(s: T, config: { optional: false }): R<RecordOptions<T>>;
+function record<T extends Schema>(s: T, config: { optional: true }): O<RecordOptions<T>>;
+function record<T extends Schema>(s: T, config?: { optional: boolean }): RecordValidator<T> {
+  return {
+    type: 'record',
+    shape: s,
+    optional: Boolean(config?.optional),
+  };
+}
 
-const recordof = <T extends Validator>(
-  v: T,
-  config?: { optional: boolean }
-): RecordofValidator<T> => ({ type: 'recordof', of: v, optional: Boolean(config?.optional) });
+function recordof<T extends Validator>(v: T): R<RecordofOptions<T>>;
+function recordof<T extends Validator>(v: T, config: { optional: false }): R<RecordofOptions<T>>;
+function recordof<T extends Validator>(v: T, config: { optional: true }): O<RecordofOptions<T>>;
+function recordof<T extends Validator>(v: T, config?: { optional: boolean }): RecordofValidator<T> {
+  return {
+    type: 'recordof',
+    of: v,
+    optional: Boolean(config?.optional),
+  };
+}
 
 /* TEST USE-CASE */
 const create = <S extends Schema>(_: S): DataFrom<S> => ({} as DataFrom<S>); // mock
@@ -137,8 +162,10 @@ const res = create({
   id: string({ optional: true, maxLength: [10, 'lksjdf'] }),
   name: string({ maxLength: [20, 'lkasjdf'] }),
   age: number(),
-  tags: listof(string()),
+  isAdult: boolean({ optional: true }),
+  tags: listof(string(), { optional: true }),
   stuff: list([string(), number(), string()]),
+  other_stuff: listof(record({ x: number(), y: number() })),
   friends: recordof(record({ name: string(), age: number() })),
   meta: record({
     created: number(),
