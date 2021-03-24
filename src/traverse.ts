@@ -41,10 +41,10 @@ export interface Visitor {
   string?: IVisitor<StringValidator>;
   number?: IVisitor<NumberValidator>;
   boolean?: IVisitor<BooleanValidator>;
-  list?: IVisitor<ListValidator>;
-  listof?: IVisitor<ListofValidator>;
-  record?: IVisitor<RecordValidator>;
-  recordof?: IVisitor<RecordofValidator>;
+  list?: IVisitor<ListValidator<Validator[]>>;
+  listof?: IVisitor<ListofValidator<Validator>>;
+  record?: IVisitor<RecordValidator<Schema>>;
+  recordof?: IVisitor<RecordofValidator<Validator>>;
 }
 
 type VisitorFunction = IVisitor<Validator>;

@@ -1,4 +1,4 @@
-import { createSchema, Validator, _ } from '../src/index';
+import { createSchema, Schema, Validator, _ } from '../src/index';
 import { TYPEERR } from '../src/constants';
 
 const createString = (length: number, char?: string) => {
@@ -325,7 +325,7 @@ describe('traverse', () => {
         return {
           type: 'container',
           children: Object.entries(validator.shape).reduce((acc, [shapeKey, shapeValidator]) => {
-            acc[shapeKey] = customTraverse(shapeKey, shapeValidator); // visit children
+            acc[shapeKey] = customTraverse(shapeKey, shapeValidator as Validator); // visit children
             return acc;
           }, {} as Record<string, any>),
         };
@@ -359,10 +359,13 @@ describe('traverse', () => {
       } else if (validator.type == 'number') {
         return { type: 'number', label: key };
       } else if (validator.type == 'record') {
-        return Object.entries(validator.shape).reduce((acc, [shapeKey, shapeValidator]) => {
-          acc[shapeKey] = customTraverse(shapeKey, shapeValidator);
-          return acc;
-        }, {} as Record<string, any>);
+        return Object.entries(validator.shape as Schema).reduce(
+          (acc, [shapeKey, shapeValidator]) => {
+            acc[shapeKey] = customTraverse(shapeKey, shapeValidator);
+            return acc;
+          },
+          {} as Record<string, any>
+        );
       } else {
         return null;
       }

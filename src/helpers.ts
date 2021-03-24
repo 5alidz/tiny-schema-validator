@@ -1,83 +1,122 @@
 import {
-  StringValidator,
-  NumberValidator,
+  O,
+  R,
   BooleanValidator,
-  Validator,
   ListValidator,
   ListofValidator,
+  NumberValidator,
   RecordValidator,
   RecordofValidator,
+  Schema,
+  StringValidator,
+  Validator,
+  BooleanOptions,
+  ListOptions,
+  ListofOptions,
+  NumberOptions,
+  RecordOptions,
+  RecordofOptions,
+  StringOptions,
 } from './validatorTypes';
-import { $string, $number, $boolean, $list, $listof, $record, $recordof } from './constants';
 
-type WithoutType<T> = Omit<T, 'type'>;
-
-type Helpers =
-  | typeof $string
-  | typeof $number
-  | typeof $boolean
-  | typeof $list
-  | typeof $listof
-  | typeof $record
-  | typeof $recordof;
-
-const optional = (v?: boolean) => (typeof v == 'boolean' ? v : false);
-
-const base = <T extends Helpers>(type: T, optional: boolean) => ({ type, optional });
-
-export type StringOptions = Partial<WithoutType<StringValidator>>;
-export type NumberOptions = Partial<WithoutType<NumberValidator>>;
-export type BooleanOptions = Partial<WithoutType<BooleanValidator>>;
-export type ListOptions = { optional?: boolean };
-export type ListofOptions = { optional?: boolean };
-export type RecordOptions = { optional?: boolean };
-export type RecordofOptions = { optional?: boolean };
-
-export function string(opts?: StringOptions): StringValidator {
+export function string(config: { optional: true } & Omit<StringOptions, 'type'>): O<StringOptions>;
+export function string(config: { optional: false } & Omit<StringOptions, 'type'>): R<StringOptions>;
+export function string(
+  config: { optional?: boolean } & Omit<StringOptions, 'type'>
+): StringValidator;
+export function string(config: Omit<StringOptions, 'type'>): R<StringOptions>;
+export function string(): R<StringOptions>;
+export function string(
+  config?: { optional?: boolean } & Omit<StringOptions, 'type'>
+): StringValidator {
   return {
-    ...opts,
-    ...base($string, optional(opts?.optional)),
+    type: 'string',
+    optional: Boolean(config?.optional),
+    ...config,
   };
 }
 
-export function boolean(opts?: BooleanOptions): BooleanValidator {
-  return base($boolean, optional(opts?.optional));
-}
-
-export function number(opts?: NumberOptions): NumberValidator {
+export function number(config: { optional: true } & Omit<NumberOptions, 'type'>): O<NumberOptions>;
+export function number(config: { optional: false } & Omit<NumberOptions, 'type'>): R<NumberOptions>;
+export function number(
+  config: { optional?: boolean } & Omit<NumberOptions, 'type'>
+): NumberValidator;
+export function number(config: Omit<NumberOptions, 'type'>): R<NumberOptions>;
+export function number(): R<NumberOptions>;
+export function number(
+  config?: { optional?: boolean } & Omit<NumberOptions, 'type'>
+): NumberValidator {
   return {
-    ...opts,
-    ...base($number, optional(opts?.optional)),
+    type: 'number',
+    optional: Boolean(config?.optional),
+    ...config,
   };
 }
 
-export function list<V extends Validator[]>(shape: V, opts?: ListOptions): ListValidator {
+export function boolean(config: { optional: true }): O<BooleanOptions>;
+export function boolean(config: { optional: false }): R<BooleanOptions>;
+export function boolean(): R<BooleanOptions>;
+export function boolean(config?: { optional: boolean }): BooleanValidator {
   return {
-    ...base($list, optional(opts?.optional)),
-    shape,
+    type: 'boolean',
+    optional: Boolean(config?.optional),
   };
 }
 
-export function listof<V extends Validator>(of: V, opts?: ListofOptions): ListofValidator {
+export function list<T extends Validator[]>(list: T): R<ListOptions<T>>;
+export function list<T extends Validator[]>(
+  list: T,
+  config: { optional: false }
+): R<ListOptions<T>>;
+export function list<T extends Validator[]>(list: T, config: { optional: true }): O<ListOptions<T>>;
+export function list<T extends Validator[]>(
+  list: T,
+  config?: { optional: boolean }
+): ListValidator<T> {
+  return { type: 'list', optional: Boolean(config?.optional), shape: list };
+}
+
+export function listof<T extends Validator>(v: T): R<ListofOptions<T>>;
+export function listof<T extends Validator>(v: T, config: { optional: false }): R<ListofOptions<T>>;
+export function listof<T extends Validator>(v: T, config: { optional: true }): O<ListofOptions<T>>;
+export function listof<T extends Validator>(
+  v: T,
+  config?: { optional: boolean }
+): ListofValidator<T> {
   return {
-    ...base($listof, optional(opts?.optional)),
-    of,
+    type: 'listof',
+    optional: Boolean(config?.optional),
+    of: v,
   };
 }
 
-export function record<S extends { [key: string]: Validator }>(
-  shape: S,
-  opts?: RecordOptions
-): RecordValidator {
+export function record<T extends Schema>(s: T): R<RecordOptions<T>>;
+export function record<T extends Schema>(s: T, config: { optional: false }): R<RecordOptions<T>>;
+export function record<T extends Schema>(s: T, config: { optional: true }): O<RecordOptions<T>>;
+export function record<T extends Schema>(s: T, config?: { optional: boolean }): RecordValidator<T> {
   return {
-    ...base($record, optional(opts?.optional)),
-    shape,
+    type: 'record',
+    optional: Boolean(config?.optional),
+    shape: s,
   };
 }
 
-export function recordof<V extends Validator>(of: V, opts?: RecordofOptions): RecordofValidator {
+export function recordof<T extends Validator>(v: T): R<RecordofOptions<T>>;
+export function recordof<T extends Validator>(
+  v: T,
+  config: { optional: false }
+): R<RecordofOptions<T>>;
+export function recordof<T extends Validator>(
+  v: T,
+  config: { optional: true }
+): O<RecordofOptions<T>>;
+export function recordof<T extends Validator>(
+  v: T,
+  config?: { optional: boolean }
+): RecordofValidator<T> {
   return {
-    ...base($recordof, optional(opts?.optional)),
-    of,
+    type: 'recordof',
+    of: v,
+    optional: Boolean(config?.optional),
   };
 }

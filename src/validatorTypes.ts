@@ -1,51 +1,62 @@
-import { $string, $number, $boolean, $list, $listof, $record, $recordof } from './constants';
+export type O<V> = V & { optional: true };
+export type R<V> = V & { optional: false };
+export type V<T> = O<T> | R<T>;
 
-interface BaseValidator<T> {
-  type: T;
-  optional: boolean; // default is required
-}
-
-interface StringOptions {
-  minLength?: [number, string];
+export interface StringOptions {
+  type: 'string';
   maxLength?: [number, string];
+  minLength?: [number, string];
   pattern?: [RegExp, string];
 }
 
-interface NumberOptions {
+export interface NumberOptions {
+  type: 'number';
   max?: [number, string];
   min?: [number, string];
   is?: ['integer' | 'float', string];
 }
 
-interface ListofOptions {
-  of: Validator;
+export interface BooleanOptions {
+  type: 'boolean';
 }
 
-interface ListOptions {
-  shape: Validator[];
+export interface ListOptions<T> {
+  type: 'list';
+  shape: T;
 }
 
-interface RecordOptions {
-  shape: { [key: string]: Validator };
+export interface ListofOptions<T> {
+  type: 'listof';
+  of: T;
 }
 
-interface RecordofOptions {
-  of: Validator;
+export interface RecordOptions<T> {
+  type: 'record';
+  shape: T;
 }
 
-export type StringValidator = BaseValidator<typeof $string> & StringOptions;
-export type NumberValidator = BaseValidator<typeof $number> & NumberOptions;
-export type BooleanValidator = BaseValidator<typeof $boolean>;
-export type ListValidator = BaseValidator<typeof $list> & ListOptions;
-export type ListofValidator = BaseValidator<typeof $listof> & ListofOptions;
-export type RecordValidator = BaseValidator<typeof $record> & RecordOptions;
-export type RecordofValidator = BaseValidator<typeof $recordof> & RecordofOptions;
+export interface RecordofOptions<T> {
+  type: 'recordof';
+  of: T;
+}
+
+export type BooleanValidator = V<BooleanOptions>;
+export type StringValidator = V<StringOptions>;
+export type NumberValidator = V<NumberOptions>;
+export type ListValidator<T extends Validator[]> = V<ListOptions<T>>;
+export type ListofValidator<T extends Validator> = V<ListofOptions<T>>;
+export type RecordValidator<T extends Schema> = V<RecordOptions<T>>;
+export type RecordofValidator<T extends Validator> = V<RecordofOptions<T>>;
 
 export type Validator =
   | StringValidator
   | NumberValidator
   | BooleanValidator
-  | ListValidator
-  | ListofValidator
-  | RecordValidator
-  | RecordofValidator;
+  | ListofValidator<any>
+  | ListValidator<any[]>
+  | RecordValidator<any>
+  | RecordofValidator<any>;
+
+export interface Schema {
+  [key: string]: Validator;
+}
