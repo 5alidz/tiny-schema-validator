@@ -1,77 +1,105 @@
-import { ObjectKeys, isPlainObject } from './utils';
-import { $list, $listof, $record, $recordof } from './constants';
+import { VisitorMember, ValidatorFromType, ShapedValidator, OfValidator } from './type-utils';
+import { ObjectKeys, isPlainObject, normalizeResult, shouldAddToResult, toObj } from './utils';
+import { $boolean, $list, $listof, $number, $record, $recordof, $string } from './constants';
 import {
-  BooleanValidator,
-  ListofValidator,
-  ListValidator,
-  NumberValidator,
-  RecordofValidator,
-  RecordValidator,
-  StringValidator,
   Validator,
+  Schema,
+  RecordValidator,
+  RecordofValidator,
+  ListValidator,
+  ListofValidator,
 } from './validatorTypes';
 
-function shouldAddToResult(res: unknown) {
-  if (
-    res == null ||
-    (isPlainObject(res) && ObjectKeys(res).length < 1) ||
-    (Array.isArray(res) && res.length < 1)
-  ) {
-    return false;
+export type Visitor = Partial<
+  {
+    [K in VisitorMember]: (Utils: {
+      path: string[];
+      key: string;
+      validator: ValidatorFromType<K>;
+      value: any;
+    }) => any;
   }
-  return true;
-}
+>;
 
-function toObj(value: any) {
-  return Array.isArray(value)
-    ? { ...value }
-    : isPlainObject(value)
-    ? value
-    : ({} as Record<string, any>);
-}
+type VisitorExists<
+  V extends Validator,
+  Vi extends Visitor,
+  Def,
+  VKey extends VisitorMember
+> = Vi[V['type']] extends undefined
+  ? Def
+  : ReturnType<NonNullable<Vi[V['type']]>> extends infer X | null | undefined
+  ? Def | X
+  : ReturnType<NonNullable<Vi[VKey]>>;
 
-type IVisitor<T> = (
-  path: string[],
-  key: string,
-  v: T,
-  value: any
-) => string | null | any[] | Record<string, any>;
+type InferVisitorResult<V extends Validator, Vi extends Visitor> = V extends RecordValidator<
+  infer S
+>
+  ? VisitorExists<V, Vi, { [K in keyof S]?: NonNullable<InferVisitorResult<S[K], Vi>> }, 'record'>
+  : V extends ListValidator<infer A>
+  ? VisitorExists<V, Vi, InferVisitorResult<A[number], Vi>[], 'list'>
+  : V extends ListofValidator<infer VV>
+  ? VisitorExists<V, Vi, InferVisitorResult<VV, Vi>[], 'listof'>
+  : V extends RecordofValidator<infer VV>
+  ? VisitorExists<V, Vi, { [key: string]: InferVisitorResult<VV, Vi> | undefined }, 'recordof'>
+  : ReturnType<NonNullable<Vi[V['type']]>> extends null | undefined
+  ? never
+  : ReturnType<NonNullable<Vi[V['type']]>>;
 
-export interface Visitor {
-  string?: IVisitor<StringValidator>;
-  number?: IVisitor<NumberValidator>;
-  boolean?: IVisitor<BooleanValidator>;
-  list?: IVisitor<ListValidator<Validator[]>>;
-  listof?: IVisitor<ListofValidator<Validator>>;
-  record?: IVisitor<RecordValidator<Schema>>;
-  recordof?: IVisitor<RecordofValidator<Validator>>;
-}
+export type TraverseResult<S extends Schema, V extends Visitor> = {
+  [K in keyof S]: InferVisitorResult<S[K], V> extends null | undefined
+    ? never
+    : InferVisitorResult<S[K], V>;
+};
 
-type VisitorFunction = IVisitor<Validator>;
-
-function enter(
+function enterNode(
   path: string[],
   nodeKey: string,
   validator: Validator,
   visitor: Visitor,
   value: any,
   eager = false
-) {
-  const cb = visitor[validator.type] as VisitorFunction;
+): ReturnType<NonNullable<Visitor[Validator['type']]>> {
   const currentPath = [...path, nodeKey];
+  const cb = visitor[validator.type] as any; // TODO infer correct visitor type
+  const cb_result =
+    typeof cb == 'function' ? cb({ path: currentPath, key: nodeKey, validator, value }) : null;
 
-  let result = typeof cb == 'function' ? cb(currentPath, nodeKey, validator, value) : null;
+  // handle primitve validator
+  if ([$string, $number, $boolean].includes(validator.type)) {
+    return cb_result;
+  }
 
-  if ((!!result && eager) || result != null) return result;
+  // return the result of object-like validator if it's not null -- respect visitor signal
+  if (cb_result != null) return cb_result;
+  const result: Record<string, any> = {};
 
-  result = {};
+  if ([$recordof, $listof].includes(validator.type)) {
+    const values = toObj(value);
+    const keys = ObjectKeys(values);
+    for (let i = 0; i < keys.length; i++) {
+      const currentResult = enterNode(
+        currentPath,
+        keys[i],
+        (validator as OfValidator).of,
+        visitor,
+        values[keys[i]],
+        eager
+      );
+      if (shouldAddToResult(currentResult)) {
+        result[keys[i]] = currentResult;
+        if (eager) return result;
+      }
+    }
+    return normalizeResult(result);
+  }
 
-  if (validator.type == $list || validator.type == $record) {
-    const shape = toObj(validator.shape);
+  if ([$record, $list].includes(validator.type)) {
+    const shape = toObj((validator as ShapedValidator).shape);
     const keys = ObjectKeys(shape);
     const values = toObj(value);
     for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(
+      const currentResult = enterNode(
         currentPath,
         keys[i],
         shape[keys[i]],
@@ -84,53 +112,27 @@ function enter(
         if (eager) return result;
       }
     }
+    return normalizeResult(result);
   }
 
-  if (validator.type == $listof || validator.type == $recordof) {
-    const values = toObj(value);
-    const keys = ObjectKeys(values);
-    for (let i = 0; i < keys.length; i++) {
-      const currentResult = enter(
-        currentPath,
-        keys[i],
-        validator.of,
-        visitor,
-        values[keys[i]],
-        eager
-      );
-      if (shouldAddToResult(currentResult)) {
-        result[keys[i]] = currentResult;
-        if (eager) return result;
-      }
-    }
-  }
-
-  return ObjectKeys(result).length > 0 ? result : null;
+  return null;
 }
 
-type Schema = { [key: string]: Validator };
-type SchemaFrom<T> = {
-  [K in keyof T]: Validator;
-};
-type FromTraverse<S extends Schema> = {
-  [K in keyof S]: ReturnType<VisitorFunction>;
-};
-
-export function traverse<T>(
-  schema: SchemaFrom<T>,
-  visitor: Visitor,
-  data: T,
+export function traverse<S extends Schema, V extends Visitor>(
+  schema: S,
+  visitor: V,
+  data: any,
   eager = false
-): Partial<FromTraverse<SchemaFrom<T>>> {
-  const schemaKeys = ObjectKeys(schema) as (keyof T)[];
-  const parent = {} as Partial<FromTraverse<SchemaFrom<T>>>;
+): Partial<TraverseResult<S, V>> {
+  const schemaKeys = ObjectKeys(schema) as (keyof S)[];
+  const parent: Partial<TraverseResult<S, V>> = {};
   for (let i = 0; i < schemaKeys.length; i++) {
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
-    const value = isPlainObject(data) ? data[schemaKey] : undefined;
-    let result = enter([], schemaKey as string, validator, visitor, value, eager);
+    const value = isPlainObject(data) ? data[schemaKey as string] : undefined;
+    let result = enterNode([], schemaKey as string, validator, visitor, value, eager);
     if (shouldAddToResult(result)) {
-      parent[schemaKey] = result;
+      parent[schemaKey] = result as ReturnType<NonNullable<V[S[keyof S]['type']]>>;
       if (eager) return parent;
     }
   }

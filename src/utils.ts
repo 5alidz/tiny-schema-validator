@@ -11,3 +11,26 @@ export function isPlainObject(maybeObject: any): maybeObject is Record<string, a
     Object.prototype.toString.call(maybeObject) == '[object Object]'
   );
 }
+
+export function shouldAddToResult(res: unknown) {
+  if (
+    res == null ||
+    (isPlainObject(res) && ObjectKeys(res).length < 1) ||
+    (Array.isArray(res) && res.length < 1)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export function toObj(value: any) {
+  return Array.isArray(value)
+    ? { ...value }
+    : isPlainObject(value)
+    ? value
+    : ({} as Record<string, any>);
+}
+
+export function normalizeResult(result: Record<string, any>) {
+  return ObjectKeys(result).length <= 0 ? null : result;
+}
