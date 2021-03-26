@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0-alpha.0](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.3...v3.0.0-alpha.0) (2021-03-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* infers data type automatically for both JS & TS
+
+### Features
+
+* implement better type inference | less work for the user ([a827591](https://github.com/5alidz/tiny-schema-validator/commit/a827591a8ce525b8f32d08e99ffdb8f8f9657485))
+
+
+### Bug Fixes
+
+* fix validator circular refernce ([f922048](https://github.com/5alidz/tiny-schema-validator/commit/f922048af6faca4389e7d0abfd5c35097946e916))
+
 ## [2.1.0-alpha.3](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.2...v2.1.0-alpha.3) (2021-03-19)
 
 ## [2.1.0-alpha.2](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.1...v2.1.0-alpha.2) (2021-03-18)
