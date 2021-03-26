@@ -1,49 +1,62 @@
-interface BaseValidator<T> {
-  type: T;
-  optional: boolean; // default is required
-}
+export type O<V> = V & { optional: true };
+export type R<V> = V & { optional: false };
+export type V<T> = O<T> | R<T>;
 
-interface StringOptions {
-  minLength?: [number, string];
+export interface StringOptions {
+  type: 'string';
   maxLength?: [number, string];
+  minLength?: [number, string];
   pattern?: [RegExp, string];
 }
 
-interface NumberOptions {
+export interface NumberOptions {
+  type: 'number';
   max?: [number, string];
   min?: [number, string];
   is?: ['integer' | 'float', string];
 }
 
-export type StringValidator = BaseValidator<'string'> & StringOptions;
-export type NumberValidator = BaseValidator<'number'> & NumberOptions;
-export type BooleanValidator = BaseValidator<'boolean'>;
+export interface BooleanOptions {
+  type: 'boolean';
+}
 
-export type ArrayValidator = BaseValidator<'array'> & {
-  of?: Validator;
-  shape?: Validator[];
-};
+export interface ListOptions<T> {
+  type: 'list';
+  shape: T;
+}
 
-export type ObjectValidator = BaseValidator<'object'> & {
-  of?: Validator;
-  shape?: { [key: string]: Validator };
-};
+export interface ListofOptions<T> {
+  type: 'listof';
+  of: T;
+}
+
+export interface RecordOptions<T> {
+  type: 'record';
+  shape: T;
+}
+
+export interface RecordofOptions<T> {
+  type: 'recordof';
+  of: T;
+}
+
+export type BooleanValidator = V<BooleanOptions>;
+export type StringValidator = V<StringOptions>;
+export type NumberValidator = V<NumberOptions>;
+export type ListValidator<T extends Validator[]> = V<ListOptions<T>>;
+export type ListofValidator<T extends Validator> = V<ListofOptions<T>>;
+export type RecordValidator<T extends Schema> = V<RecordOptions<T>>;
+export type RecordofValidator<T extends Validator> = V<RecordofOptions<T>>;
 
 export type Validator =
   | StringValidator
   | NumberValidator
   | BooleanValidator
-  | ArrayValidator
-  | ObjectValidator;
+  | ListofValidator<any>
+  | ListValidator<any[]>
+  | RecordValidator<any>
+  | RecordofValidator<any>;
 
-export type InferValidator<T> = T extends string
-  ? StringValidator
-  : T extends number
-  ? NumberValidator
-  : T extends boolean
-  ? BooleanValidator
-  : T extends Array<any>
-  ? ArrayValidator
-  : T extends object
-  ? ObjectValidator
-  : Validator;
+export interface Schema {
+  [key: string]: Validator;
+}

@@ -1,32 +1,36 @@
 import { isPlainObject, ObjectKeys } from './utils';
-import { createErrors } from './validators';
-import { DATAERR, OBJECT, SCHEMAERR } from './constants';
+import { createErrors } from './createErrors';
+import { DATAERR, $record, SCHEMAERR } from './constants';
 import invariant from 'tiny-invariant';
-import { ObjectValidator } from './validatorTypes';
-import { SchemaFrom, ErrorsFrom } from './type-utils';
+import { RecordValidator, Schema } from './validatorTypes';
+import { DataFrom } from './type-utils';
+import { traverse as _traverse, Visitor } from './traverse';
 
-export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFrom<T>) {
+export function createSchema<T extends Schema>(_schema: T) {
   invariant(isPlainObject(_schema), SCHEMAERR);
-  // copy schema to ensure the correctness of the validation
+  type Data = DataFrom<T>;
   const schema = Object.freeze({ ..._schema });
 
   function validate(data: any, eager = false) {
     const errors = createErrors(schema, data, eager);
-    return ObjectKeys(errors).length > 0 ? (errors as ErrorsFrom<T>) : null;
+    return ObjectKeys(errors).length > 0 ? errors : null;
   }
 
-  function is(data: any): data is T {
-    const errors = validate(data, true);
-    return !errors && isPlainObject(data);
+  function is(data: any): data is Data {
+    return !validate(data, true) && isPlainObject(data);
   }
 
-  function embed(config = { optional: false }): ObjectValidator {
-    return { type: OBJECT, shape: schema, ...config };
+  function embed(config = { optional: false }): RecordValidator<T> {
+    return { type: $record, shape: schema, ...config };
   }
 
-  function produce(data: any): T {
+  function produce(data: any): Data {
     invariant(is(data), DATAERR);
     return data;
+  }
+
+  function traverse<V extends Visitor>(visitor: V, data?: any, eager?: boolean) {
+    return _traverse(schema as T, visitor, data, eager);
   }
 
   return {
@@ -34,5 +38,6 @@ export function createSchema<T extends { [key: string]: any }>(_schema: SchemaFr
     embed,
     produce,
     is,
+    traverse,
   };
 }

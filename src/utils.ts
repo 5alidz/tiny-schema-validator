@@ -1,19 +1,36 @@
-import { BOOLEAN, NUMBER, OBJECT, STRING } from './constants';
-
 export const ObjectKeys = Object.keys.bind(Object);
-export const isBool = (value: unknown): value is boolean => typeof value == BOOLEAN;
-export const isString = (value: unknown): value is string => typeof value == STRING;
+export const isBool = (value: unknown): value is boolean => typeof value == 'boolean';
+export const isString = (value: unknown): value is string => typeof value == 'string';
 export const isNumber = (value: unknown): value is number =>
-  typeof value == NUMBER && !isNaN(value as number) && Number.isFinite(value);
-
-export const UnknownKey = Symbol.for('gssu5l');
-
-export const safeSpread = <T extends object>(o?: T) => (o ? o : {});
+  typeof value == 'number' && !isNaN(value as number) && Number.isFinite(value);
 
 export function isPlainObject(maybeObject: any): maybeObject is Record<string, any> {
   return (
-    typeof maybeObject == OBJECT &&
+    typeof maybeObject == 'object' &&
     maybeObject != null &&
     Object.prototype.toString.call(maybeObject) == '[object Object]'
   );
+}
+
+export function shouldAddToResult(res: unknown) {
+  if (
+    res == null ||
+    (isPlainObject(res) && ObjectKeys(res).length < 1) ||
+    (Array.isArray(res) && res.length < 1)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export function toObj(value: any) {
+  return Array.isArray(value)
+    ? { ...value }
+    : isPlainObject(value)
+    ? value
+    : ({} as Record<string, any>);
+}
+
+export function normalizeResult(result: Record<string, any>) {
+  return ObjectKeys(result).length <= 0 ? null : result;
 }
