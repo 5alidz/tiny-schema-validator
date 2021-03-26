@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.0-alpha.0...v3.0.0) (2021-03-26)
+
+
+### Bug Fixes
+
+* helper better type support & insure primitives is required ([ab37494](https://github.com/5alidz/tiny-schema-validator/commit/ab374945dd1b439701161f38b183b7c1d4fecd7a))
+
 ## [3.0.0-alpha.0](https://github.com/5alidz/tiny-schema-validator/compare/v2.1.0-alpha.3...v3.0.0-alpha.0) (2021-03-26)
 
 
