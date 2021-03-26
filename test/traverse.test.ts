@@ -8,6 +8,28 @@ describe('traverse', () => {
     profile: _.record({ username: _.string(), email: _.string(), age: _.number() }),
   });
 
+  test('basic test', () => {
+    const form_ui = Person.traverse({
+      number({ path, key }) {
+        if (path.includes('profile')) return { type: 'number', label: key };
+        return null; // otherwise ignore
+      },
+      string({ path, key }) {
+        if (path.includes('profile')) return { type: 'text', label: key };
+        return null; // otherwise ignore
+      },
+      record: () => null,
+    });
+
+    expect(form_ui).toStrictEqual({
+      profile: {
+        username: { type: 'text', label: 'username' },
+        email: { type: 'text', label: 'email' },
+        age: { type: 'number', label: 'age' },
+      },
+    });
+  });
+
   test('custom traverse 1', () => {
     const customTraverse = (key: string, validator: Validator) => {
       if (validator.type == 'string') {
@@ -79,27 +101,7 @@ describe('traverse', () => {
     });
   });
 
-  test('readme example 2', () => {
-    const profileFormInputsData = Person.traverse({
-      number({ path, key }) {
-        if (path.includes('profile')) return { type: 'number', label: key };
-        return null; // otherwise ignore
-      },
-      string({ path, key }) {
-        if (path.includes('profile')) return { type: 'text', label: key };
-        return null; // otherwise ignore
-      },
-      record() {
-        return 'ignore children';
-      },
-    });
-
-    expect(profileFormInputsData).toStrictEqual({
-      profile: 'ignore children',
-    });
-  });
-
-  test('readme example', () => {
+  test('defining only primitive visitor', () => {
     const profileFormInputsData = Person.traverse({
       number({ path, key }) {
         if (path.includes('profile')) return { type: 'number', label: key };

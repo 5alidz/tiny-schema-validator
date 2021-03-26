@@ -14,7 +14,10 @@ describe('createSchema throws when', () => {
 
 describe('eager validation', () => {
   const s = createSchema({
-    a: _.record({ b: _.string(), c: _.record({ d: _.number(), e: _.number() }) }),
+    a: _.record({
+      b: _.string({ optional: true }),
+      c: _.record({ d: _.number(), e: _.number({ optional: true }) }),
+    }),
   });
 
   test('test 1', () => {

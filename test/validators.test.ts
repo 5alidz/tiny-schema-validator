@@ -8,18 +8,22 @@ const createString = (length: number, char?: string) => {
 };
 
 describe('string validator', () => {
-  const name = (conf?: { optional: boolean }) =>
-    _.string({
-      optional: conf?.optional,
-      maxLength: [100, 'too-long'],
-      minLength: [10, 'too-short'],
-      pattern: [/[a-zA-Z]/g, 'invalid-pattern'],
-    });
+  const name = (() => {
+    const config = {
+      maxLength: [100, 'too-long'] as [number, string],
+      minLength: [10, 'too-short'] as [number, string],
+      pattern: [/[a-zA-Z]/g, 'invalid-pattern'] as [RegExp, string],
+    };
+    return {
+      optional: () => _.string({ ...config, optional: true }),
+      required: () => _.string(config),
+    };
+  })();
   const Person1 = createSchema({
-    name: name({ optional: true }),
+    name: name.optional(),
   });
   const Person2 = createSchema({
-    name: name(),
+    name: name.required(),
   });
 
   test('tests type', () => {
@@ -84,19 +88,24 @@ describe('string validator', () => {
 });
 
 describe('number validator', () => {
-  const age = (conf?: { optional: boolean }) =>
-    _.number({
-      optional: conf?.optional,
-      max: [10, 'too-large'],
-      min: [1, 'too-small'],
-      is: ['integer', 'wrong-type-of-number'],
-    });
+  const age = (() => {
+    const config = {
+      max: [10, 'too-large'] as [number, string],
+      min: [1, 'too-small'] as [number, string],
+      is: ['integer', 'wrong-type-of-number'] as ['integer', string],
+    };
+    return {
+      optional: () => _.number({ ...config, optional: true }),
+      required: () => _.number(config),
+    };
+  })();
+
   const Person1 = createSchema({
-    age: age({ optional: true }),
+    age: age.optional(),
     n: _.number({ optional: true }),
   });
   const Person2 = createSchema({
-    age: age(),
+    age: age.required(),
     n: _.number({ optional: true }),
   });
 

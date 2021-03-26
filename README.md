@@ -1,13 +1,13 @@
 # Tiny Schema Validator
 
+small, practical, and type-safe Schema validator.
+
 [![GitHub license](https://img.shields.io/github/license/5alidz/tiny-schema-validator)](https://github.com/5alidz/tiny-schema-validator/blob/master/LICENSE) ![Minzipped size](https://img.shields.io/bundlephobia/minzip/tiny-schema-validator.svg)
 
-- installation
-- usage
-- schema
-- validators
-- advanced usage
-- caveats
+## History
+
+This started as a side-project for me to learn about advanced TypeScript topics and was never intended to be an npm package,
+but I liked how it turned up and decided that it might be useful to use in my future projects.
 
 ## Installation
 
@@ -33,29 +33,18 @@ export const Person = createSchema({
 });
 ```
 
-and in TypeScript
+and in TypeScript everything is the same, but to get the data type inferred from the schema you can do this:
 
 ```ts
-import { createSchema, _ } from 'tiny-schema-validator';
-
-interface IPerson {
-  name: string;
-  age: number;
-  email: string;
-}
-
-export const Person = createSchema<IPerson>({
-  name: _.string({ maxLength: [100, 'too-long'], minLength: [2, 'too-short'] }),
-  age: _.number({ max: [150, 'too-old'], min: [13, 'too-young']}),
-  email: _.string({ pattern: [/^[^@]+@[^@]+\.[^@]+$/, 'invalid-email']});
-});
+//  PersonType { name: string; age: number; email: string; }
+export type PersonType = ReturnType<typeof Person.produce>;
 ```
 
 ## Schema
 
 When you create a schema, you will get a nice API to handle multiple use-cases in the client and the server.
 
-- `is(data: any): boolean` check if the data is valid
+- `is(data: any): boolean` check if the data is valid (eager evaluation)
 - `validate(data: any): Errors` errors returned has the same shape as the schema you defined (does not throw)
 - `produce(data: any): data` throws an error when the data is invalid. otherwise, it returns data
 - `embed(config?: { optional: boolean })` embeds the schema in other schemas
@@ -70,7 +59,7 @@ Person.is({ name: 'john', age: 42, email: 'john@gmail.com' }); // true
 Person.validate({}); // { name: 'invalid-type', age: 'invalid-type', email: 'invalid-type' }
 Person.validate({ name: 'john', age: 42, email: 'john@gmail.com' }); // null
 
-Person.produce(undefined); // throws an error with the same shape as the schema
+Person.produce(undefined); // throws { name: 'invalid-type' }
 
 // embedding the person schema
 const GroupOfPeople = createSchema({
@@ -127,26 +116,27 @@ Check out the full validators API below:
 
 ### Custom validators
 
-You can use validators from `_` as building blocks for your custom validator:
+To create custom validators that does not break type inference:
+
+- use validators from `_` as building blocks for your custom validator.
+- your custom validator should define an `optional` and `required` functions.
+
+Example of creating custom validators:
 
 ```js
-const alphaNumeric = validatorOpts =>
-  _.string({
+const alphaNumeric = (() => {
+  const config = {
     pattern: [/^[a-zA-Z0-9]*$/, 'only-letters-and-number'],
-    ...validatorOpts,
-  });
-
-const email = validatorOpts =>
-  _.string({
-    pattern: [/^[^@]+@[^@]+\.[^@]+$/, 'invalid-email'],
-    ...validatorOpts,
-  });
+  };
+  return {
+    required: additional => _.string({ ...additional, ...config, optional: false }), // inferred as Required
+    optional: additional => _.string({ ...additional, ...config, optional: true }), // inferred as Optional
+  };
+})();
 
 const Person = createSchema({
   // ...
-  username: alphaNumeric({ maxLength: [20, 'username-too-long'] }),
-  email: email(),
-  alt_email: email({ optional: true }),
+  username: alphaNumeric.required({ maxLength: [20, 'username-too-long'] }),
   // ...
 });
 ```
@@ -169,14 +159,16 @@ const User = createSchema({
 });
 
 const form_ui = User.traverse({
-  number(path, key) {
+  number({ path, key }) {
     if (path.includes('profile')) return { type: 'number', label: key };
     return null; // otherwise ignore
   },
-  string(path, key) {
+  string({ path, key }) {
     if (path.includes('profile')) return { type: 'text', label: key };
     return null; // otherwise ignore
   },
+  // this is required to get the type of "profile" correct
+  record: () => null,
 });
 
 console.log(form_ui); /* 
@@ -197,9 +189,7 @@ The return type of your visitor is important, and there are a few considerations
 Returning `null` from visitor signals to ignore this node from the result, with the exception:
 `record | recordof | list | listof`, returning `null` signals to continue down recursively.
 
-So to return something from `record` visitor you will need to visit its children recursively.
-
-_Note_: in most cases defining only the primitive visitors is enough.
+So to return something from `record` visitor for example, you will need to visit its children recursively.
 
 Continuing from the previous `User` Example
 
@@ -231,8 +221,8 @@ const customTraverse = (key, validator) => {
 };
 
 const form_ui = User.traverse({
-  record(path, key, recordValidator) {
-    return customTraverse(key, recordValidator);
+  record({ path, key, validator }) {
+    return customTraverse(key, validator);
   },
 });
 ```
@@ -252,3 +242,7 @@ _.list([_.number({ optional: true /* THIS IS IGNORED */ }), _.number()]);
 const list = createSchema({ list: _.listof(_.string()) });
 list.validate({ list: ['string', 42, 'string'] }); // { list: { 1: 'invalid-type' } }
 ```
+
+## Recursive types
+
+Currently there's no easy way to create recursive types, if you think you could help, PRs are welcome
