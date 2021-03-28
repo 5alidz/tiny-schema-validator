@@ -18,8 +18,8 @@
     "prepare": "tsdx build",
     "size": "size-limit",
     "analyze": "size-limit --why",
-    "release": "standard-version",
-    "release:alpha": "yarn release -- --prerelease alpha"
+    "release": "standard-version && git push origin master && npm publish",
+    "release:alpha": "yarn release -- --prerelease alpha && npm publish --tag alpha"
   },
   "peerDependencies": {},
   "husky": {
