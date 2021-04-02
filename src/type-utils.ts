@@ -33,23 +33,6 @@ type InferDataType<T> = T extends StringValidator
   ? InferTypeWithOptional<T, { [key: string]: InferDataType<V> }>
   : never;
 
-export type IsPlainObject<T, U> = T extends object ? (T extends Array<any> ? never : U) : never;
-
-export type FieldError<T> = T extends object | void
-  ? T extends Array<infer U> | void
-    ? string | ErrorsFrom<{ [key: number]: U }>
-    : string | ErrorsFrom<T>
-  : string;
-
-export type ErrorsFrom<T> = IsPlainObject<
-  T,
-  Partial<
-    {
-      [K in keyof T]: FieldError<T[K]>;
-    }
-  >
->;
-
 export type VisitorMember =
   | 'string'
   | 'number'
