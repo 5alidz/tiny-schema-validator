@@ -2,7 +2,7 @@ import { isPlainObject, ObjectKeys } from './utils';
 import { createErrors } from './createErrors';
 import { DATAERR, $record, SCHEMAERR } from './constants';
 import invariant from 'tiny-invariant';
-import { RecordValidator, Schema } from './validatorTypes';
+import { RecordValidator, Schema, R, O, RecordOptions } from './validatorTypes';
 import { DataFrom } from './type-utils';
 import { traverse as _traverse, Visitor } from './traverse';
 
@@ -20,6 +20,9 @@ export function createSchema<T extends Schema>(_schema: T) {
     return !validate(data, true) && isPlainObject(data);
   }
 
+  function embed(): R<RecordOptions<T>>;
+  function embed(config: { optional: false }): R<RecordOptions<T>>;
+  function embed(config: { optional: true }): O<RecordOptions<T>>;
   function embed(config = { optional: false }): RecordValidator<T> {
     return { type: $record, shape: schema, ...config };
   }
