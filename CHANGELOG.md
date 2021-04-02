@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.2](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.1...v3.0.2) (2021-04-02)
+
+
+### Bug Fixes
+
+* **types:** fix infered schema.embed ([ade04e0](https://github.com/5alidz/tiny-schema-validator/commit/ade04e0684dd0d4cdd1887a32c74ce6542913e90))
+
 ### [3.0.1](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.0...v3.0.1) (2021-03-28)
 
 ## [3.0.0](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.0-alpha.0...v3.0.0) (2021-03-26)
