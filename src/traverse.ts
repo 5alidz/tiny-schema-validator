@@ -121,15 +121,16 @@ function enterNode(
 export function traverse<S extends Schema, V extends Visitor>(
   schema: S,
   visitor: V,
-  data: any,
+  _data: any,
   eager = false
 ): Partial<TraverseResult<S, V>> {
   const schemaKeys = ObjectKeys(schema) as (keyof S)[];
   const parent: Partial<TraverseResult<S, V>> = {};
+  const data = isPlainObject(_data) ? _data : {};
   for (let i = 0; i < schemaKeys.length; i++) {
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
-    const value = isPlainObject(data) ? data[schemaKey as string] : undefined;
+    const value = data[schemaKey as string];
     let result = enterNode([], schemaKey as string, validator, visitor, value, eager);
     if (shouldAddToResult(result)) {
       parent[schemaKey] = result as ReturnType<NonNullable<V[S[keyof S]['type']]>>;
