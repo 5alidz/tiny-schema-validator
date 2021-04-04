@@ -53,13 +53,19 @@ When you create a schema, you will get a nice API to handle multiple use-cases i
 Continuing from the previous example:
 
 ```js
+const john = { name: 'john', age: 42, email: 'john@gmail.com' };
 Person.is({}); // false
-Person.is({ name: 'john', age: 42, email: 'john@gmail.com' }); // true
+Person.is(john); // true
 
 Person.validate({}); // { name: 'invalid-type', age: 'invalid-type', email: 'invalid-type' }
-Person.validate({ name: 'john', age: 42, email: 'john@gmail.com' }); // null
+Person.validate(john); // null
 
-Person.produce(undefined); // throws { name: 'invalid-type' }
+try {
+  Person.produce(undefined);
+} catch (e) {
+  console.log(e instanceof TypeError); // true
+  console.log(e.message); // "invalid-data"
+}
 
 // embedding the person schema
 const GroupOfPeople = createSchema({
