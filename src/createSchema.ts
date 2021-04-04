@@ -8,6 +8,7 @@ import { traverse as _traverse, Visitor } from './traverse';
 
 export function createSchema<T extends Schema>(_schema: T) {
   invariant(isPlainObject(_schema), SCHEMAERR);
+
   type Data = DataFrom<T>;
   const schema = Object.freeze({ ..._schema });
 
@@ -17,7 +18,9 @@ export function createSchema<T extends Schema>(_schema: T) {
   }
 
   function is(data: any): data is Data {
-    return !validate(data, true) && isPlainObject(data);
+    if (!isPlainObject(data)) return false;
+    const errors = validate(data, true);
+    return errors == null;
   }
 
   function embed(): R<RecordOptions<T>>;
@@ -28,7 +31,7 @@ export function createSchema<T extends Schema>(_schema: T) {
   }
 
   function produce(data: any): Data {
-    invariant(is(data), DATAERR);
+    if (!is(data)) throw new TypeError(DATAERR);
     return data;
   }
 
