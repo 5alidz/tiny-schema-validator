@@ -27,23 +27,30 @@ const Person = createSchema({
   email: _.string({
     pattern: [/^[^@]+@[^@]+\.[^@]+$/, 'invalid-email'],
   }),
+  tags: _.listof(_.string(), { optional: true }),
+  friends: _.recordof(_.record({ name: _.string(), id: _.string() }), { optional: true }),
+  four_tags: _.list([_.string(), _.string(), _.string(), _.string(), _.list([_.number()])], {
+    optional: true,
+  }),
   meta: _.record({
     id: _.string({ minLength: [1, 'invalid-id'], maxLength: [1000, 'invalid-id'] }),
     created: _.number({ is: ['integer', 'timestamp-should-be-intger'] }),
     updated: _.number({ optional: true }),
     nested: _.record(
       {
-        propA: _.number({ optional: true }),
-        propB: _.boolean({ optional: true }),
-        propC: _.string({ optional: true }),
+        propA: _.number(),
+        propB: _.boolean(),
+        propC: _.string(),
       },
       { optional: true }
     ),
   }),
 });
 
+// type IPerson = ReturnType<typeof Person['produce']>;
+
 describe('validate', () => {
-  test('test ignores optional', () => {
+  test('test ignores optional properties when not found', () => {
     const errors = Person.validate({
       is_verified: true,
       name: 'abc',
@@ -52,11 +59,32 @@ describe('validate', () => {
       meta: {
         id: '123',
         created: Date.now(),
-        updated: Date.now(),
       },
     });
+
     expect(errors).toBe(null);
   });
+  test('validates optional properties when found', () => {
+    const errors = Person.validate({
+      is_premium: 'hello world',
+      is_verified: true,
+      name: 'abc',
+      age: 42,
+      email: 'abc@gmail.com',
+      meta: {
+        id: '123',
+        created: Date.now(),
+        updated: new Date().toISOString(),
+      },
+    });
+    expect(errors).toStrictEqual({
+      is_premium: 'invalid-type',
+      meta: {
+        updated: 'invalid-type',
+      },
+    });
+  });
+
   test('emits correct error messages', () => {
     const errors = Person.validate(
       {

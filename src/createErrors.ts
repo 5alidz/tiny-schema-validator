@@ -53,18 +53,22 @@ export function createErrors<T extends Schema>(schema: T, data: any, eager = fal
         return null;
       },
       list: ({ validator, value }) => {
-        if (shouldSkipValidation(value, validator)) return null;
+        // NOTE: because null signals continue recursively
+        // we return an empty object to skip its children
+        if (shouldSkipValidation(value, validator)) return {};
         if (!Array.isArray(value)) return TYPEERR;
+        return null;
+      },
+      record: ({ validator, value }) => {
+        // NOTE: because null signals continue recursively
+        // we return an empty object to skip its children
+        if (shouldSkipValidation(value, validator)) return {};
+        if (!isPlainObject(value)) return TYPEERR;
         return null;
       },
       listof: ({ validator, value }) => {
         if (shouldSkipValidation(value, validator)) return null;
         if (!Array.isArray(value)) return TYPEERR;
-        return null;
-      },
-      record: ({ validator, value }) => {
-        if (shouldSkipValidation(value, validator)) return null;
-        if (!isPlainObject(value)) return TYPEERR;
         return null;
       },
       recordof: ({ validator, value }) => {
