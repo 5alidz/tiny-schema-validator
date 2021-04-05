@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.4](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.3...v3.0.4) (2021-04-05)
+
+
+### Bug Fixes
+
+* fix shape validators recursion even when optional ([994cef6](https://github.com/5alidz/tiny-schema-validator/commit/994cef6229b2accc49c46972e94ef5b41fe8d275))
+* move data checking outside the loop ([2d40ec1](https://github.com/5alidz/tiny-schema-validator/commit/2d40ec1a10633d5a20c738e1f44f2da9acbcd7a9))
+* optimize types for strict traverse ([4fd3d26](https://github.com/5alidz/tiny-schema-validator/commit/4fd3d26f7e6380a2d9a23ffcbb9804a1d166075b))
+* throw TypeError on produce invalid-data ([0462755](https://github.com/5alidz/tiny-schema-validator/commit/04627558e7007ac39622aa085b3380f54997a750))
+
 ### [3.0.3](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.1...v3.0.3) (2021-04-02)
 
 
