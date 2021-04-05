@@ -29,6 +29,7 @@ const Person = createSchema({
   }),
   tags: _.listof(_.string(), { optional: true }),
   friends: _.recordof(_.record({ name: _.string(), id: _.string() }), { optional: true }),
+  nested_list: _.list([_.string(), _.list([_.list([_.number()])])], { optional: true }),
   four_tags: _.list([_.string(), _.string(), _.string(), _.string(), _.list([_.number()])], {
     optional: true,
   }),
@@ -61,6 +62,21 @@ describe('validate', () => {
         created: Date.now(),
       },
     });
+
+    /*
+    if (errors) {
+      errors.age;
+      errors.email;
+      errors.four_tags;
+      errors.friends;
+      errors.is_premium;
+      errors.is_verified;
+      errors.meta;
+      errors.name;
+      errors.tags;
+      errors.nested_list;
+    }
+    */
 
     expect(errors).toBe(null);
   });
