@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.5](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.4...v3.0.5) (2021-04-05)
+
+
+### Bug Fixes
+
+* narrow down types in case of {} ([5cf59cf](https://github.com/5alidz/tiny-schema-validator/commit/5cf59cfaf5b6b851e0adbce055dd6fb364ccc8c6))
+
 ### [3.0.4](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.3...v3.0.4) (2021-04-05)
 
 
