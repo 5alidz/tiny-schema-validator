@@ -51,7 +51,7 @@ const Person = createSchema({
 // type IPerson = ReturnType<typeof Person['produce']>;
 
 describe('validate', () => {
-  test('test ignores optional properties when not found', () => {
+  test('ignores optional properties when not found', () => {
     const errors = Person.validate({
       is_verified: true,
       name: 'abc',
@@ -63,23 +63,9 @@ describe('validate', () => {
       },
     });
 
-    /*
-    if (errors) {
-      errors.age;
-      errors.email;
-      errors.four_tags;
-      errors.friends;
-      errors.is_premium;
-      errors.is_verified;
-      errors.meta;
-      errors.name;
-      errors.tags;
-      errors.nested_list;
-    }
-    */
-
     expect(errors).toBe(null);
   });
+
   test('validates optional properties when found', () => {
     const errors = Person.validate({
       is_premium: 'hello world',
@@ -87,6 +73,7 @@ describe('validate', () => {
       name: 'abc',
       age: 42,
       email: 'abc@gmail.com',
+      tags: {},
       meta: {
         id: '123',
         created: Date.now(),
@@ -95,6 +82,7 @@ describe('validate', () => {
     });
     expect(errors).toStrictEqual({
       is_premium: 'invalid-type',
+      tags: 'invalid-type',
       meta: {
         updated: 'invalid-type',
       },
@@ -109,13 +97,6 @@ describe('validate', () => {
       true
     );
     expect(errors).toStrictEqual({ is_premium: 'invalid-type' });
-    const errors2 = Person.validate(
-      {
-        is_premium: 42,
-      },
-      true
-    );
-    expect(errors2).toStrictEqual({ is_premium: 'invalid-type' });
   });
   // test('handles eager validation correctly', () => {
   //   expect(Person.validate({}, true)).toStrictEqual({ name: TYPEERR });
