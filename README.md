@@ -100,7 +100,7 @@ Check out the full validators API below:
 |           |                                 | - `optional: boolean` default to false                        |
 |           |                                 | - `min: [number, error: string]`                              |
 |           |                                 | - `max: [number, error: string]`                              |
-|           |                                 | - `is : ['integer' | 'float', error: string]` default is both |
+|           |                                 | - `is : ['integer' \| 'float', error: string]` default is both |
 |           |                                 |                                                               |
 | boolean   | `boolean(options?)`             | options(optional): Object                                     |
 |           |                                 | - `optional: boolean` default to false                        |
