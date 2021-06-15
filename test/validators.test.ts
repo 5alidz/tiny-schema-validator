@@ -208,7 +208,20 @@ describe('listof validator', () => {
 describe('list validator', () => {
   const Person = createSchema({
     friends: _.list([_.string(), _.number()]),
+    otherList: _.list([_.string({ minLength: [4, 'lower-bound'] })], { optional: true }),
   });
+
+  test('handles optional property', () => {
+    expect(Person.validate({ friends: ['John', 42] })).toBe(null);
+    expect(Person.validate({ friends: ['John', 42], otherList: [] })).toStrictEqual({
+      otherList: { 0: TYPEERR },
+    });
+    expect(Person.validate({ friends: ['John', 42], otherList: ['hel'] })).toStrictEqual({
+      otherList: { 0: 'lower-bound' },
+    });
+    expect(Person.validate({ friends: ['John', 42], otherList: ['hell'] })).toStrictEqual(null);
+  });
+
   test('emits correct error messages', () => {
     expect(Person.validate({ friends: [] })).toStrictEqual({ friends: { 0: TYPEERR, 1: TYPEERR } });
     expect(Person.validate({ friends: {} })).toStrictEqual({ friends: TYPEERR });
