@@ -11,10 +11,6 @@ import {
   Validator,
 } from './validatorTypes';
 
-export type DataFrom<S extends Schema> = {
-  [K in keyof S]: InferDataType<S[K]>;
-};
-
 type InferTypeWithOptional<T, U> = T extends O<T> ? U | undefined : U;
 
 type InferDataType<T> = T extends StringValidator
@@ -32,6 +28,10 @@ type InferDataType<T> = T extends StringValidator
   : T extends RecordofValidator<infer V>
   ? InferTypeWithOptional<T, { [key: string]: InferDataType<V> }>
   : never;
+
+export type DataFrom<S extends Schema> = {
+  [K in keyof S]: InferDataType<S[K]>;
+};
 
 export type VisitorMember =
   | 'string'
