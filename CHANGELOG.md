@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.1.0](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.5...v3.1.0) (2021-07-18)
+
+
+### Features
+
+* add latest version of typescript ([2e8a339](https://github.com/5alidz/tiny-schema-validator/commit/2e8a339d392bb229d52f79ded5f563e1953e2dc6))
+
 ### [3.0.5](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.4...v3.0.5) (2021-04-05)
 
 
