@@ -4,7 +4,8 @@ import { DATAERR, $record, SCHEMAERR } from './constants';
 import invariant from 'tiny-invariant';
 import { RecordValidator, Schema, R, O, RecordOptions } from './validatorTypes';
 import { DataFrom } from './type-utils';
-import { traverse as _traverse, Visitor } from './traverse';
+import { traverse as _traverse } from './traverse';
+import { Visitor } from './traverse.types';
 
 export function createSchema<T extends Schema>(_schema: T) {
   invariant(isPlainObject(_schema), SCHEMAERR);

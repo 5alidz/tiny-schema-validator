@@ -1,80 +1,12 @@
-import { VisitorMember, ValidatorFromType, ShapedValidator, OfValidator } from './type-utils';
+import { ShapedValidator, OfValidator } from './type-utils';
 import { ObjectKeys, isPlainObject, shouldAddToResult, toObj } from './utils';
 import { $boolean, $list, $listof, $number, $record, $recordof, $string } from './constants';
-import {
-  Validator,
-  Schema,
-  RecordValidator,
-  RecordofValidator,
-  ListValidator,
-  ListofValidator,
-  StringValidator,
-  NumberValidator,
-  BooleanValidator,
-} from './validatorTypes';
+import { Validator, Schema } from './validatorTypes';
+import { TraverseResult, Visitor } from './traverse.types';
 
 function normalizeResult(result: Record<string, any>) {
   return ObjectKeys(result).length <= 0 ? null : result;
 }
-
-export type Visitor = Partial<
-  {
-    [K in VisitorMember]: (Utils: {
-      path: string[];
-      key: string;
-      validator: ValidatorFromType<K>;
-      value: any;
-    }) => any;
-  }
->;
-
-type VisitorExists<
-  Vi extends Visitor,
-  Default,
-  VKey extends VisitorMember
-> = Vi[VKey] extends undefined
-  ? never
-  : ReturnType<NonNullable<Vi[VKey]>> extends infer X
-  ? X extends string | number | boolean | null | undefined
-    ? NonNullable<Default> | NonNullable<X>
-    : X extends {}
-    ? NonNullable<Default>
-    : NonNullable<Default> | NonNullable<X>
-  : NonNullable<Default>;
-
-type InferVisitorResult<V extends Validator, Vi extends Visitor> = V extends RecordValidator<
-  infer S
->
-  ? VisitorExists<Vi, { [K in keyof S]?: NonNullable<InferVisitorResult<S[K], Vi>> }, 'record'>
-  : V extends ListValidator<infer A>
-  ? VisitorExists<
-      Vi,
-      { [K in number]: NonNullable<InferVisitorResult<A[number], Vi>> | undefined },
-      'list'
-    >
-  : V extends ListofValidator<infer VV>
-  ? VisitorExists<
-      Vi,
-      { [key: number]: NonNullable<InferVisitorResult<VV, Vi>> | undefined },
-      'listof'
-    >
-  : V extends RecordofValidator<infer VV>
-  ? VisitorExists<
-      Vi,
-      { [key: string]: NonNullable<InferVisitorResult<VV, Vi>> | undefined },
-      'recordof'
-    >
-  : V extends StringValidator
-  ? VisitorExists<Vi, ReturnType<NonNullable<Vi['string']>>, 'string'>
-  : V extends NumberValidator
-  ? VisitorExists<Vi, ReturnType<NonNullable<Vi['number']>>, 'number'>
-  : V extends BooleanValidator
-  ? VisitorExists<Vi, ReturnType<NonNullable<Vi['boolean']>>, 'boolean'>
-  : never;
-
-export type TraverseResult<S extends Schema, V extends Visitor> = {
-  [K in keyof S]: InferVisitorResult<S[K], V>;
-};
 
 function enterNode(
   path: string[],
