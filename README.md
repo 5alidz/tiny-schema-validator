@@ -88,38 +88,38 @@ validators.string(); // creates a string validator
 
 Check out the full validators API below:
 
-| validator | signature                       | props                                                         |
-| :-------- | ------------------------------- | :------------------------------------------------------------ |
-| string    | `string(options?)`              | options (optional): Object                                    |
-|           |                                 | - `optional : boolean` defaults to false                      |
-|           |                                 | - `maxLength: [length: number, error: string]`                |
-|           |                                 | - `minLength: [length: number, error: string]`                |
-|           |                                 | - `pattern : [pattern: RegExp, error: string]`                |
-|           |                                 |                                                               |
-| number    | `number(options?)`              | options(optional): Object                                     |
-|           |                                 | - `optional: boolean` default to false                        |
-|           |                                 | - `min: [number, error: string]`                              |
-|           |                                 | - `max: [number, error: string]`                              |
+| validator | signature                       | props                                                          |
+| :-------- | ------------------------------- | :------------------------------------------------------------- |
+| string    | `string(options?)`              | options (optional): Object                                     |
+|           |                                 | - `optional : boolean` defaults to false                       |
+|           |                                 | - `maxLength: [length: number, error: string]`                 |
+|           |                                 | - `minLength: [length: number, error: string]`                 |
+|           |                                 | - `pattern : [pattern: RegExp, error: string]`                 |
+|           |                                 |                                                                |
+| number    | `number(options?)`              | options(optional): Object                                      |
+|           |                                 | - `optional: boolean` default to false                         |
+|           |                                 | - `min: [number, error: string]`                               |
+|           |                                 | - `max: [number, error: string]`                               |
 |           |                                 | - `is : ['integer' \| 'float', error: string]` default is both |
-|           |                                 |                                                               |
-| boolean   | `boolean(options?)`             | options(optional): Object                                     |
-|           |                                 | - `optional: boolean` default to false                        |
-|           |                                 |                                                               |
-| list      | `list(validators[], options?)`  | validators: Array of validators                               |
-|           |                                 | options(optional): Object                                     |
-|           |                                 | - `optional: boolean` default to false                        |
-|           |                                 |                                                               |
-| listof    | `listof(validator, options?)`   | validator: Validator                                          |
-|           |                                 | options(optional): Object                                     |
-|           |                                 | - `optional: boolean` default to false                        |
-|           |                                 |                                                               |
-| record    | `record(shape, options?)`       | shape: `Object { [key: string]: Validator }`                  |
-|           |                                 | options(optional): Object                                     |
-|           |                                 | - `optional: boolean` default to false                        |
-|           |                                 |                                                               |
-| recordof  | `recordof(validator, options?)` | validator: `Validator`                                        |
-|           |                                 | options(optional): Object                                     |
-|           |                                 | - `optional: boolean` default to false                        |
+|           |                                 |                                                                |
+| boolean   | `boolean(options?)`             | options(optional): Object                                      |
+|           |                                 | - `optional: boolean` default to false                         |
+|           |                                 |                                                                |
+| list      | `list(validators[], options?)`  | validators: Array of validators                                |
+|           |                                 | options(optional): Object                                      |
+|           |                                 | - `optional: boolean` default to false                         |
+|           |                                 |                                                                |
+| listof    | `listof(validator, options?)`   | validator: Validator                                           |
+|           |                                 | options(optional): Object                                      |
+|           |                                 | - `optional: boolean` default to false                         |
+|           |                                 |                                                                |
+| record    | `record(shape, options?)`       | shape: `Object { [key: string]: Validator }`                   |
+|           |                                 | options(optional): Object                                      |
+|           |                                 | - `optional: boolean` default to false                         |
+|           |                                 |                                                                |
+| recordof  | `recordof(validator, options?)` | validator: `Validator`                                         |
+|           |                                 | options(optional): Object                                      |
+|           |                                 | - `optional: boolean` default to false                         |
 
 ### Custom validators
 
@@ -252,3 +252,42 @@ list.validate({ list: ['string', 42, 'string'] }); // { list: { 1: 'invalid-type
 ## Recursive types
 
 Currently, there's no easy way to create recursive types. if you think you could help, PRs are welcome
+
+## Errors while wrapping schemas
+
+if you try to wrap your schema, you will encounter this error (Type instantiation is excessively deep and possibly infinite)
+to fix it, you should unwrap your schema and re-create it inside your abstraction.
+let's take the following example:
+
+```ts
+const User = createSchema({
+  name: _.string(),
+  age: _.number(),
+});
+
+// your abstraction
+function schemaWrapper<T>(schema: T) {
+  //...
+}
+
+const wrappedUser = schemaWrapper(User); // ERROR: Type instantiation is excessively deep and possibly infinite
+```
+
+The fix:
+
+```ts
+import { Schema, R, RecordOptions } from 'tiny-schema-validator';
+/*
+optionally, to infer data from the embedded schema, you do DataFrom<T>
+
+import { DataFrom } from 'tiny-schema-validator/dist/type-utils';
+*/
+
+// extract schema with Schema.embed()
+function schemaWrapper<T extends Schema>(schema: R<RecordOptions<T>>) {
+  const newSchema = createSchema(schema.shape); // you can add/remove/modify passed schema here
+  // ...
+}
+
+const wrappedUser = schemaWrapper(User.embed()); // all good no errors
+```
