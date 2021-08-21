@@ -37,7 +37,13 @@ export const Person = createSchema({
 and in TypeScript, everything is the same, but to get the data type inferred from the schema, you can do this:
 
 ```ts
-//  PersonType { name: string; age: number; email: string; }
+/*
+  PersonType {
+    name: string;
+    age: number;
+    email: string;
+  }
+*/
 export type PersonType = ReturnType<typeof Person.produce>;
 ```
 
