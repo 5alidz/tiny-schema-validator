@@ -41,6 +41,7 @@ export function createSchema<T extends Schema>(_schema: T) {
   }
 
   return {
+    source: schema,
     validate,
     embed,
     produce,
