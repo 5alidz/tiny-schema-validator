@@ -1,6 +1,16 @@
 import { ShapedValidator, OfValidator } from './type-utils';
 import { ObjectKeys, isPlainObject, shouldAddToResult, toObj } from './utils';
-import { $boolean, $list, $listof, $number, $record, $recordof, $string } from './constants';
+import {
+  $boolean,
+  $constant,
+  $list,
+  $listof,
+  $number,
+  $record,
+  $recordof,
+  $string,
+  TYPEERR,
+} from './constants';
 import { Validator, Schema } from './validatorTypes';
 import { TraverseResult, Visitor } from './traverse.types';
 
@@ -22,12 +32,23 @@ function enterNode(
     typeof cb == 'function' ? cb({ path: currentPath, key: nodeKey, validator, value }) : null;
 
   // handle primitve validator
-  if ([$string, $number, $boolean].includes(validator.type)) {
+  if ([$string, $number, $boolean, $constant].includes(validator.type)) {
     return cb_result;
   }
 
   // return the result of object-like validator if it's not null -- respect visitor signal
   if (cb_result != null) return cb_result;
+
+  if (validator.type == 'union') {
+    const unionTypes = validator.of;
+    let currentResult = null;
+    for (let i = 0; i < unionTypes.length; i++) {
+      currentResult = enterNode(currentPath, nodeKey, unionTypes[i], visitor, value, true);
+      if (currentResult == null) return null;
+    }
+    return TYPEERR;
+  }
+
   const result: Record<string, any> = {};
 
   if ([$recordof, $listof].includes(validator.type)) {

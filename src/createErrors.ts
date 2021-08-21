@@ -52,6 +52,13 @@ export function createErrors<T extends Schema>(schema: T, data: any, eager = fal
         if (!isBool(value)) return TYPEERR;
         return null;
       },
+      constant: ({ validator, value }) => {
+        if (value === validator.value) return null;
+        return TYPEERR;
+      },
+      union: () => {
+        return null;
+      },
       list: ({ validator, value }): {} | null | typeof TYPEERR => {
         // NOTE: because null signals continue recursively
         // we return an empty object to skip its children

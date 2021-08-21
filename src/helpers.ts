@@ -17,8 +17,20 @@ import {
   RecordOptions,
   RecordofOptions,
   StringOptions,
+  ConstantOptions,
+  UnionOptions,
 } from './validatorTypes';
-import { $boolean, $list, $listof, $number, $record, $recordof, $string } from './constants';
+import {
+  $boolean,
+  $constant,
+  $list,
+  $listof,
+  $number,
+  $record,
+  $recordof,
+  $string,
+  $union,
+} from './constants';
 
 export function string(): R<StringOptions>;
 export function string(config: Omit<StringOptions, 'type'>): R<StringOptions>;
@@ -133,5 +145,21 @@ export function recordof<T extends R<Validator>>(
     type: $recordof,
     of: { ...v, optional: false },
     optional: !!config?.optional,
+  };
+}
+
+export function constant<T extends string | number | boolean>(v: T): R<ConstantOptions<T>> {
+  return {
+    type: $constant,
+    optional: false,
+    value: v,
+  };
+}
+
+export function union<T extends R<Validator>[]>(...types: T): R<UnionOptions<T>> {
+  return {
+    type: $union,
+    optional: false,
+    of: types,
   };
 }

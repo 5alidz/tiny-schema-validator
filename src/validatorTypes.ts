@@ -40,6 +40,16 @@ export interface RecordofOptions<T> {
   of: T;
 }
 
+export interface ConstantOptions<T> {
+  type: 'constant';
+  value: T;
+}
+
+export interface UnionOptions<T> {
+  type: 'union';
+  of: T;
+}
+
 export type BooleanValidator = V<BooleanOptions>;
 export type StringValidator = V<StringOptions>;
 export type NumberValidator = V<NumberOptions>;
@@ -47,8 +57,12 @@ export type ListValidator<T extends Validator[]> = V<ListOptions<T>>;
 export type ListofValidator<T extends Validator> = V<ListofOptions<T>>;
 export type RecordValidator<T extends Schema> = V<RecordOptions<T>>;
 export type RecordofValidator<T extends Validator> = V<RecordofOptions<T>>;
+export type ConstantValidator<T extends string | number | boolean> = V<ConstantOptions<T>>;
+export type UnionValidator<T extends Validator[]> = V<UnionOptions<T>>;
 
 export type Validator =
+  | UnionValidator<any[]>
+  | ConstantValidator<any>
   | StringValidator
   | NumberValidator
   | BooleanValidator

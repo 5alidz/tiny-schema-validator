@@ -274,6 +274,42 @@ describe('record validator', () => {
   });
 });
 
+describe('constant validator', () => {
+  const schema = createSchema({
+    version: _.constant('v2'),
+  });
+
+  test('emits correct error message', () => {
+    expect(schema.validate({ version: 'v2' })).toStrictEqual(null);
+    expect(schema.validate({ version: 'something else' })).toStrictEqual({ version: TYPEERR });
+  });
+});
+
+describe('union validator', () => {
+  test('emits correct error message', () => {
+    const schema = createSchema({
+      state: _.union(_.constant('on'), _.constant('off'), _.constant('unknown')),
+    });
+    expect(schema.validate({ state: 'on' })).toStrictEqual(null);
+    expect(schema.validate({ state: 'off' })).toStrictEqual(null);
+    expect(schema.validate({ state: 'unknown' })).toStrictEqual(null);
+    expect(schema.validate({ state: 'should-error' })).toStrictEqual({ state: TYPEERR });
+  });
+
+  test('performs deep checks', () => {
+    const schema = createSchema({
+      state: _.union(
+        _.record({ prop: _.number() }),
+        _.record({ x: _.record({ nested: _.constant(42) }) })
+      ),
+    });
+    expect(schema.validate({ state: { prop: 100 } })).toStrictEqual(null);
+    expect(schema.validate({ state: { x: { nested: 42 } } })).toStrictEqual(null);
+    expect(schema.validate({ state: { x: { nested: 33 } } })).toStrictEqual({ state: TYPEERR });
+    expect(schema.validate({ state: 'should-error' })).toStrictEqual({ state: TYPEERR });
+  });
+});
+
 describe('recordof validator', () => {
   const Group = createSchema({
     people: _.recordof(

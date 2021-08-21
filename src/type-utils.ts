@@ -9,11 +9,22 @@ import {
   StringValidator,
   Schema,
   Validator,
+  ConstantValidator,
+  UnionValidator,
 } from './validatorTypes';
 
 type InferTypeWithOptional<T, U> = T extends O<T> ? U | undefined : U;
+type ArrayElement<T> = T extends readonly unknown[]
+  ? T extends readonly (infer ElementType)[]
+    ? ElementType
+    : never
+  : never;
 
-type InferDataType<T> = T extends StringValidator
+type InferDataType<T> = T extends UnionValidator<infer U>
+  ? ArrayElement<InferTypeWithOptional<T, { [K in keyof U]: InferDataType<U[K]> }>>
+  : T extends ConstantValidator<infer U>
+  ? U
+  : T extends StringValidator
   ? InferTypeWithOptional<T, string>
   : T extends NumberValidator
   ? InferTypeWithOptional<T, number>
@@ -34,6 +45,8 @@ export type DataFrom<S extends Schema> = {
 };
 
 export type VisitorMember =
+  | 'constant'
+  | 'union'
   | 'string'
   | 'number'
   | 'boolean'
@@ -42,7 +55,11 @@ export type VisitorMember =
   | 'recordof'
   | 'listof';
 
-export type ValidatorFromType<T extends string> = T extends 'string'
+export type ValidatorFromType<T extends string> = T extends 'constant'
+  ? ConstantValidator<string | number | boolean>
+  : T extends 'union'
+  ? UnionValidator<Validator[]>
+  : T extends 'string'
   ? StringValidator
   : T extends 'number'
   ? NumberValidator
