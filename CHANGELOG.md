@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/5alidz/tiny-schema-validator/compare/v3.1.0...v4.0.0) (2021-08-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* when traversing the schema and the returned value is null, the result will contain
+'invalid-type' message
+
+### Features
+
+* add constant and union validators ([7859392](https://github.com/5alidz/tiny-schema-validator/commit/7859392dffdda3bc7adeaa6fc5f6df6085b2d5a1))
+* include the schema source on the schema api ([14c1ecf](https://github.com/5alidz/tiny-schema-validator/commit/14c1ecf2e8bf0e7e9429bb34c6c58e88199bb4c2))
+
 ## [3.1.0](https://github.com/5alidz/tiny-schema-validator/compare/v3.0.5...v3.1.0) (2021-07-18)
 
 
