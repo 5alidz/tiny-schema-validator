@@ -1,6 +1,6 @@
 # Tiny Schema Validator
 
-JSON schema validator with great type inference.
+JSON schema validator with excellent type inference for JavaScript and TypeScript.
 
 [![GitHub license](https://img.shields.io/github/license/5alidz/tiny-schema-validator)](https://github.com/5alidz/tiny-schema-validator/blob/master/LICENSE) ![Minzipped size](https://img.shields.io/bundlephobia/minzip/tiny-schema-validator.svg)
 
@@ -19,18 +19,30 @@ yarn add tiny-schema-validator
 ```js
 import { createSchema, _ } from 'tiny-schema-validator';
 
-export const Person = createSchema({
-  name: _.string({
-    maxLength: [100, 'too-long'],
-    minLength: [2, 'too-short'],
+export const User = createSchema({
+  metadata: _.record({
+    date_created: _.number(),
+    id: _.string(),
   }),
-  age: _.number({
-    max: [150, 'too-old'],
-    min: [13, 'too-young'],
+  profile: _.record({
+    name: _.string({
+      maxLength: [100, 'too-long'],
+      minLength: [2, 'too-short'],
+    }),
+    age: _.number({
+      max: [150, 'too-old'],
+      min: [13, 'too-young'],
+    }),
+    email: _.string({
+      pattern: [/^[^@]+@[^@]+\.[^@]+$/, 'invalid-email'],
+    }),
   }),
-  email: _.string({
-    pattern: [/^[^@]+@[^@]+\.[^@]+$/, 'invalid-email'],
-  });
+  payment_status: _.union(
+    _.constant('pending'),
+    _.constant('failed'),
+    _.constant('success'),
+    _.constant('canceled')
+  ),
 });
 ```
 
@@ -38,16 +50,23 @@ and in TypeScript, everything is the same, but to get the data type inferred fro
 
 ```ts
 /*
-  PersonType {
-    name: string;
-    age: number;
-    email: string;
+  UserType {
+    metadata: {
+      date_created: number;
+      id: string;
+    };
+    profile: {
+      name: string;
+      age: number;
+      email: string;
+    };
+    payment_status: 'pending' | 'failed' | 'success' | 'canceled';
   }
 */
-export type PersonType = ReturnType<typeof Person.produce>;
+export type UserType = ReturnType<typeof User.produce>;
 ```
 
-## Schema
+### Using the schema
 
 When you create a schema, you will get a nice API to handle multiple use-cases in the client and the server.
 
@@ -55,11 +74,17 @@ When you create a schema, you will get a nice API to handle multiple use-cases i
 - `validate(data: any): Errors` errors returned has the same shape as the schema you defined (does not throw)
 - `produce(data: any): data` throws an error when the data is invalid. otherwise, it returns data
 - `embed(config?: { optional: boolean })` embeds the schema in other schemas
-- `traverse(visitor, data?, eager?)` (advanced) see usage below.
+- `source` the schema itself in a parsable format
 
-Continuing from the previous example:
+example usage:
 
 ```js
+const Person = createSchema({
+  name: _.string(),
+  age: _.number(),
+  email: _.string(),
+});
+
 const john = { name: 'john', age: 42, email: 'john@gmail.com' };
 Person.is({}); // false
 Person.is(john); // true
@@ -84,18 +109,37 @@ const GroupOfPeople = createSchema({
 
 ## Validators
 
+All validators are required by default.
 All validators are accessible with the `_` (underscore) namespace; The reason for using `_` instead of a good name like `validators` is developer experience, and you can alias it to whatever you want.
 
 ```js
 import { _ as validators } from 'tiny-schema-validator';
 
-validators.string(); // creates a string validator
+// NOTE: when you call a validator you just create an object with { type: '<type of validator>', ...options }
+// this is just a shorthand for that.
+
+// example of all validators and corresponding Typescript types
+validators.string(); // string
+validators.number(); // number
+validators.boolean(); // boolean
+validators.constant(42); // 42
+validators.union(validators.constant(1), validators.constant(2), validators.constant(3)); // 1 | 2 | 3
+validators.list([validators.number(), validators.number()]); // [number, number]
+validators.listof(validators.string()); // string[]
+validators.recordof(validators.string()); // Record<string, string>
+validators.record({
+  timestamp: validators.number(),
+  id: validators.string(),
+}); // { timestamp: number; id: string; }
 ```
 
 Check out the full validators API below:
 
 | validator | signature                       | props                                                          |
 | :-------- | ------------------------------- | :------------------------------------------------------------- |
+|           |                                 |                                                                |
+| constant  | `constant(value)`               | value: `string \| number \| boolean`                           |
+|           |                                 |                                                                |
 | string    | `string(options?)`              | options (optional): Object                                     |
 |           |                                 | - `optional : boolean` defaults to false                       |
 |           |                                 | - `maxLength: [length: number, error: string]`                 |
@@ -110,6 +154,8 @@ Check out the full validators API below:
 |           |                                 |                                                                |
 | boolean   | `boolean(options?)`             | options(optional): Object                                      |
 |           |                                 | - `optional: boolean` default to false                         |
+|           |                                 |                                                                |
+| union     | `union(...validators)`          | validators: Array of validators as paramaters                  |
 |           |                                 |                                                                |
 | list      | `list(validators[], options?)`  | validators: Array of validators                                |
 |           |                                 | options(optional): Object                                      |
@@ -151,91 +197,6 @@ const Person = createSchema({
   // ...
   username: alphaNumeric.required({ maxLength: [20, 'username-too-long'] }),
   // ...
-});
-```
-
-## Advanced usage
-
-In addition to validating data, you can also reuse your schema in other areas, like creating forms UI.
-`traverse` function come-in handy to help you achieve that.
-
-### Example
-
-In this example, we will transform a schema to create meta-data to create form UI elements.
-
-```js
-const User = createSchema({
-  id: _.string(),
-  created: _.number(),
-  updated: _.number(),
-  profile: _.record({ username: _.string(), email: _.string(), age: _.number() }),
-});
-
-const form_ui = User.traverse({
-  number({ path, key }) {
-    if (path.includes('profile')) return { type: 'number', label: key };
-    return null; // otherwise ignore
-  },
-  string({ path, key }) {
-    if (path.includes('profile')) return { type: 'text', label: key };
-    return null; // otherwise ignore
-  },
-  // this is required to get the type of "profile" correct
-  record: () => null,
-});
-
-console.log(form_ui); /* 
-  {
-    profile: {
-      username: { type: 'text', label: 'username' },
-      email: { type: 'text', label: 'email' },
-      age: { type: 'number', label: 'age' }
-    }
-  }
-*/
-```
-
-### How to traverse
-
-there are a few considerations when defining `visitor` object:
-
-- In `string | number | boolean` visitors, returning `null` signals to ignore this node.
-- In `record | recordof | list | listof` visitors, returning `null` signals to visit its children.
-- To skip over `record | recordof | list | listof` nodes, return `{}` (empty object).
-
-Continuing from the previous `User` Example
-
-```js
-/*
-Say We need this structure:
-{
-  profile: {
-    type: 'container',
-    children: [
-      { type: 'text', label: 'username' },
-      { type: 'text', label: 'email' },
-      { type: 'number', label: 'age' }
-    ]
-  }
-}
-*/
-const customTraverse = (key, validator) => {
-  const type = validator.type;
-
-  if (type == 'string') return { type: key == 'email' ? key : 'text', label: key };
-  if (type == 'number') return { type: 'number', label: key };
-  if (type == 'record')
-    return {
-      type: 'container',
-      children: Object.entries(validator.shape).map(entry => customTraverse(...entry)),
-    };
-  return null;
-};
-
-const form_ui = User.traverse({
-  record({ path, key, validator }) {
-    return customTraverse(key, validator);
-  },
 });
 ```
 
