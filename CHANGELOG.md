@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0](https://github.com/5alidz/tiny-schema-validator/compare/v4.0.0...v5.0.0) (2021-08-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* - replace "traverse" with "source" so you can parse the schema however you want,
+also to add "atomic" validations
+
+* remove traverse, and replace it with direct validation ([513c682](https://github.com/5alidz/tiny-schema-validator/commit/513c682acd3d1845acbc73c44f52ed766e5039a5))
+
 ## [4.0.0](https://github.com/5alidz/tiny-schema-validator/compare/v3.1.0...v4.0.0) (2021-08-21)
 
 
