@@ -46,6 +46,12 @@ const Person = createSchema({
       { optional: true }
     ),
   }),
+  payment_status: _.union(
+    _.constant('pending'),
+    _.constant('canceled'),
+    _.constant('processed'),
+    _.constant('failed')
+  ),
 });
 
 // type IPerson = ReturnType<typeof Person['produce']>;
@@ -57,6 +63,7 @@ describe('validate', () => {
       name: 'abc',
       age: 42,
       email: 'abc@gmail.com',
+      payment_status: 'pending',
       meta: {
         id: '123',
         created: Date.now(),
@@ -79,6 +86,7 @@ describe('validate', () => {
         created: Date.now(),
         updated: new Date().toISOString(),
       },
+      payment_status: 'pending',
     });
     expect(errors).toStrictEqual({
       is_premium: 'invalid-type',
