@@ -21,6 +21,7 @@ import {
   Validator,
 } from './validatorTypes';
 import { TYPEERR } from './constants';
+import invariant from 'tiny-invariant';
 
 function shouldSkipValidation(value: unknown, validator: Validator) {
   return value == null && Boolean(validator.optional);
@@ -31,16 +32,9 @@ function normalizeResult<T extends Record<string, any>>(result: T) {
 }
 
 function enterNode(validator: Validator, value: unknown, eager = false) {
-  if (validator.type == 'string') return validators.string(validator, value);
-  if (validator.type == 'number') return validators.number(validator, value);
-  if (validator.type == 'boolean') return validators.boolean(validator, value);
-  if (validator.type == 'constant') return validators.constant(validator, value);
-  if (validator.type == 'union') return validators.union(validator, value);
-  if (validator.type == 'list') return validators.list(validator, value, eager);
-  if (validator.type == 'listof') return validators.listof(validator, value, eager);
-  if (validator.type == 'record') return validators.record(validator, value, eager);
-  if (validator.type == 'recordof') return validators.recordof(validator, value, eager);
-  throw new TypeError('invalid-validator-type');
+  const fn = validators[validator.type] as any;
+  invariant(typeof fn == 'function', 'invalid-validator-type');
+  return fn(validator, value, eager);
 }
 
 type InferCallbackResult<V extends Validator> = V extends
