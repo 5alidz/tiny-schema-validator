@@ -10,6 +10,7 @@ import {
   Schema,
   ConstantValidator,
   UnionValidator,
+  Validator,
 } from './validatorTypes';
 
 type InferTypeWithOptional<T, U> = T extends O<T> ? U | undefined : U;
@@ -42,4 +43,25 @@ type InferDataType<T> = T extends UnionValidator<infer U>
 
 export type DataFrom<S extends Schema> = {
   [K in keyof S]: InferDataType<S[K]>;
+};
+
+export type InferCallbackResult<V extends Validator> = V extends
+  | StringValidator
+  | NumberValidator
+  | BooleanValidator
+  | ConstantValidator<any>
+  | UnionValidator<any>
+  ? string
+  : V extends ListValidator<infer U>
+  ? { [key in number]?: InferCallbackResult<U[key]> }
+  : V extends ListofValidator<infer U>
+  ? { [key: number]: InferCallbackResult<U> | undefined }
+  : V extends RecordValidator<infer U>
+  ? { [key in keyof U]?: InferCallbackResult<U[key]> }
+  : V extends RecordofValidator<infer U>
+  ? { [key: string]: InferCallbackResult<U> | undefined }
+  : never;
+
+export type InferResult<S extends Schema> = {
+  [key in keyof S]?: InferCallbackResult<S[key]>;
 };

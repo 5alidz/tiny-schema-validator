@@ -1,4 +1,5 @@
 export const ObjectKeys = Object.keys.bind(Object);
+export const isArray = (value: unknown): value is any[] => Array.isArray(value);
 export const isBool = (value: unknown): value is boolean => typeof value == 'boolean';
 export const isString = (value: unknown): value is string => typeof value == 'string';
 export const isNumber = (value: unknown): value is number =>
@@ -24,9 +25,5 @@ export function shouldAddToResult(res: unknown) {
 }
 
 export function toObj(value: any) {
-  return Array.isArray(value)
-    ? { ...value }
-    : isPlainObject(value)
-    ? value
-    : ({} as Record<string, any>);
+  return isArray(value) ? { ...value } : isPlainObject(value) ? value : ({} as Record<string, any>);
 }

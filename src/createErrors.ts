@@ -6,6 +6,7 @@ import {
   ObjectKeys,
   toObj,
   shouldAddToResult,
+  isArray,
 } from './utils';
 import {
   BooleanValidator,
@@ -20,6 +21,7 @@ import {
   UnionValidator,
   Validator,
 } from './validatorTypes';
+import { InferResult, InferCallbackResult } from './type-utils';
 import { TYPEERR } from './constants';
 import invariant from 'tiny-invariant';
 
@@ -37,26 +39,42 @@ function enterNode(validator: Validator, value: unknown, eager = false) {
   return fn(validator, value, eager);
 }
 
-type InferCallbackResult<V extends Validator> = V extends
-  | StringValidator
-  | NumberValidator
-  | BooleanValidator
-  | ConstantValidator<any>
-  | UnionValidator<any>
-  ? string
-  : V extends ListValidator<infer U>
-  ? { [key in number]?: InferCallbackResult<U[key]> }
-  : V extends ListofValidator<infer U>
-  ? { [key: number]: InferCallbackResult<U> | undefined }
-  : V extends RecordValidator<infer U>
-  ? { [key in keyof U]?: InferCallbackResult<U[key]> }
-  : V extends RecordofValidator<infer U>
-  ? { [key: string]: InferCallbackResult<U> | undefined }
-  : never;
+function parseShapeValidator(
+  validator: RecordValidator<any> | ListValidator<any[]>,
+  value: unknown,
+  eager = false
+) {
+  const shape = toObj(validator).shape;
+  const keys = ObjectKeys(shape);
+  const values = toObj(value);
+  const result: Record<string, any> = {};
+  for (let i = 0; i < keys.length; i++) {
+    const currentResult = enterNode(shape[keys[i]], values[keys[i]]);
+    if (shouldAddToResult(currentResult)) {
+      result[keys[i]] = currentResult;
+      if (eager) return result;
+    }
+  }
+  return normalizeResult(result);
+}
 
-type InferResult<S extends Schema> = {
-  [key in keyof S]?: InferCallbackResult<S[key]>;
-};
+function parseOfValidator(
+  validator: RecordofValidator<any> | ListofValidator<any>,
+  value: unknown,
+  eager = false
+) {
+  const values = toObj(value);
+  const keys = ObjectKeys(values);
+  const result: Record<string, any> = {};
+  for (let i = 0; i < keys.length; i++) {
+    const currentResult = enterNode(validator.of, values[keys[i]]);
+    if (shouldAddToResult(currentResult)) {
+      result[keys[i]] = currentResult;
+      if (eager) return result;
+    }
+  }
+  return normalizeResult(result);
+}
 
 const validators = {
   string(validator: StringValidator, value: unknown) {
@@ -117,65 +135,23 @@ const validators = {
   },
   list<T extends Validator[]>(validator: ListValidator<T>, value: unknown, eager = false) {
     if (shouldSkipValidation(value, validator)) return null;
-    if (!Array.isArray(value)) return TYPEERR;
-    const shape = toObj(validator).shape;
-    const keys = ObjectKeys(shape);
-    const values = toObj(value);
-    const result: Record<string, any> = {};
-    for (let i = 0; i < keys.length; i++) {
-      const currentResult = enterNode(shape[keys[i]], values[keys[i]]);
-      if (shouldAddToResult(currentResult)) {
-        result[keys[i]] = currentResult;
-        if (eager) return result;
-      }
-    }
-    return normalizeResult(result);
+    if (!isArray(value)) return TYPEERR;
+    return parseShapeValidator(validator, value, eager);
   },
   listof<T extends Validator>(validator: ListofValidator<T>, value: unknown, eager = false) {
     if (shouldSkipValidation(value, validator)) return null;
-    if (!Array.isArray(value)) return TYPEERR;
-    const values = toObj(value);
-    const keys = ObjectKeys(values);
-    const result: Record<string, any> = {};
-    for (let i = 0; i < keys.length; i++) {
-      const currentResult = enterNode(validator.of, values[keys[i]]);
-      if (shouldAddToResult(currentResult)) {
-        result[keys[i]] = currentResult;
-        if (eager) return result;
-      }
-    }
-    return normalizeResult(result);
+    if (!isArray(value)) return TYPEERR;
+    return parseOfValidator(validator, value, eager);
   },
   record<T extends Schema>(validator: RecordValidator<T>, value: unknown, eager = false) {
     if (shouldSkipValidation(value, validator)) return null;
     if (!isPlainObject(value)) return TYPEERR;
-    const shape = toObj(validator).shape;
-    const keys = ObjectKeys(shape);
-    const values = toObj(value);
-    const result: Record<string, any> = {};
-    for (let i = 0; i < keys.length; i++) {
-      const currentResult = enterNode(shape[keys[i]], values[keys[i]]);
-      if (shouldAddToResult(currentResult)) {
-        result[keys[i]] = currentResult;
-        if (eager) return result;
-      }
-    }
-    return normalizeResult(result);
+    return parseShapeValidator(validator, value, eager);
   },
   recordof<T extends Validator>(validator: RecordofValidator<T>, value: unknown, eager = false) {
     if (shouldSkipValidation(value, validator)) return null;
     if (!isPlainObject(value)) return TYPEERR;
-    const values = toObj(value);
-    const keys = ObjectKeys(values);
-    const result: Record<string, any> = {};
-    for (let i = 0; i < keys.length; i++) {
-      const currentResult = enterNode(validator.of, values[keys[i]]);
-      if (shouldAddToResult(currentResult)) {
-        result[keys[i]] = currentResult;
-        if (eager) return result;
-      }
-    }
-    return normalizeResult(result);
+    return parseOfValidator(validator, value, eager);
   },
 };
 
