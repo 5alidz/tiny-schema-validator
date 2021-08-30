@@ -17,8 +17,7 @@ export function createSchema<T extends Schema>(_schema: T) {
 
   function is(data: any): data is Data {
     if (!isPlainObject(data)) return false;
-    const errors = validate(data, true);
-    return errors == null;
+    return validate(data, true) == null;
   }
 
   function embed(): R<RecordOptions<T>>;

@@ -165,6 +165,29 @@ describe('eager validation', () => {
   });
 });
 
+describe('reports unknown keys', () => {
+  test('returns false when one or more keys on data does not exist in the schema', () => {
+    const schema = createSchema({
+      opt: _.record({}, { optional: true }),
+      list: _.list([_.string(), _.number()], { optional: true }),
+      metadata: _.record({
+        propA: _.string(),
+      }),
+    });
+    expect(schema.is({ metadata: { propA: 'hello world' }, unknownKey: 42 })).toBe(false);
+    expect(schema.is({ metadata: { propA: 'hello world', extra: 42 } })).toBe(false);
+    expect(schema.is({ metadata: { propA: 'hello world' }, list: ['hello', 42], opt: {} })).toBe(
+      true
+    );
+    expect(
+      schema.is({ metadata: { propA: 'hello world' }, list: ['hello', 42], opt: { newKey: 42 } })
+    ).toBe(false);
+    expect(schema.is({ metadata: { propA: 'hello world' }, list: ['hello', 42, undefined] })).toBe(
+      false
+    );
+  });
+});
+
 describe('schema api', () => {
   test('`is` returns false when passed incorrect data type', () => {
     const s = createSchema({});

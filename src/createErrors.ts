@@ -1,13 +1,4 @@
-import {
-  isPlainObject,
-  isNumber,
-  isString,
-  isBool,
-  ObjectKeys,
-  toObj,
-  shouldAddToResult,
-  isArray,
-} from './utils';
+import { isPlainObject, isNumber, isString, isBool, ObjectKeys, toObj, isArray } from './utils';
 import {
   BooleanValidator,
   ConstantValidator,
@@ -24,6 +15,17 @@ import {
 import { InferResult, InferCallbackResult } from './type-utils';
 import { TYPEERR } from './constants';
 import invariant from 'tiny-invariant';
+
+function shouldAddToResult(res: unknown) {
+  if (
+    res == null ||
+    (isPlainObject(res) && ObjectKeys(res).length < 1) ||
+    (Array.isArray(res) && res.length < 1)
+  ) {
+    return false;
+  }
+  return true;
+}
 
 function shouldSkipValidation(value: unknown, validator: Validator) {
   return value == null && Boolean(validator.optional);
@@ -48,6 +50,18 @@ function parseShapeValidator(
   const keys = ObjectKeys(shape);
   const values = toObj(value);
   const result: Record<string, any> = {};
+  const unknownKeys: string[] = [];
+
+  if (
+    !ObjectKeys(values).every(key => {
+      const keyExistsInSchema = keys.includes(key);
+      if (!keyExistsInSchema) unknownKeys.push(key);
+      return keyExistsInSchema;
+    })
+  ) {
+    return Object.fromEntries(unknownKeys.map(key => [key, 'unknown-key'])) as any;
+  }
+
   for (let i = 0; i < keys.length; i++) {
     const currentResult = enterNode(shape[keys[i]], values[keys[i]]);
     if (shouldAddToResult(currentResult)) {
@@ -160,9 +174,22 @@ export function createErrors<T extends Schema>(
   _data: any,
   eager = false
 ): null | InferResult<T> {
+  const data = isPlainObject(_data) ? _data : {};
   const result: InferResult<T> = {};
   const schemaKeys = ObjectKeys(schema) as (keyof T)[];
-  const data = isPlainObject(_data) ? _data : {};
+  const dataKeys = ObjectKeys(data);
+  const unknownKeys: string[] = [];
+
+  if (
+    !dataKeys.every(key => {
+      const keyExistsInSchema = schemaKeys.includes(key);
+      if (!keyExistsInSchema) unknownKeys.push(key);
+      return keyExistsInSchema;
+    })
+  ) {
+    return Object.fromEntries(unknownKeys.map(key => [key, 'unknown-key'])) as any;
+  }
+
   for (let i = 0; i < schemaKeys.length; i++) {
     const schemaKey = schemaKeys[i];
     const validator = schema[schemaKey];
