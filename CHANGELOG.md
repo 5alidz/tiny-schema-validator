@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [5.0.3](https://github.com/5alidz/tiny-schema-validator/compare/v5.0.2...v5.0.3) (2021-08-31)
+
+
+### Bug Fixes
+
+* remove unused import ([8c1247a](https://github.com/5alidz/tiny-schema-validator/commit/8c1247a5be26a40209e584c7ea856db85a9896fd))
+* report unknown keys found in data on validation ([#2](https://github.com/5alidz/tiny-schema-validator/issues/2)) ([08a4e5c](https://github.com/5alidz/tiny-schema-validator/commit/08a4e5cda8a01710d8964db9ab199fc94d6e23e1))
+* test and fix unknown keys ([aff85e1](https://github.com/5alidz/tiny-schema-validator/commit/aff85e1d3177a2db7a9c1c5947820db0a3521329))
+
 ### [5.0.2](https://github.com/5alidz/tiny-schema-validator/compare/v5.0.1...v5.0.2) (2021-08-28)
 
 ### [5.0.1](https://github.com/5alidz/tiny-schema-validator/compare/v5.0.0...v5.0.1) (2021-08-28)
