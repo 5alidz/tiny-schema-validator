@@ -142,6 +142,15 @@ describe('is', () => {
     }),
   });
 
+  test('returns false when passed incorrect data type', () => {
+    const s = createSchema({});
+    expect(s.is(undefined)).toBe(false);
+    expect(s.is(null)).toBe(false);
+    expect(s.is([])).toBe(false);
+
+    expect(s.is({})).toBe(true);
+  });
+
   test('return correct boolean based on data', () => {
     expect(s.is({ a: { c: { d: 42 } } })).toBe(true);
     expect(s.is({ a: { b: 'hello', c: { e: 120, d: 42 } } })).toBe(true);
@@ -166,7 +175,45 @@ describe('eager validation', () => {
 });
 
 describe('reports unknown keys', () => {
-  test('returns false when one or more keys on data does not exist in the schema', () => {
+  describe('is', () => {
+    const schema = createSchema({
+      hello: _.string(),
+    });
+    test('exits when it finds an unknown-key', () => {
+      expect(schema.is({ goodbye: 42, hello: 'im valid' })).toBe(false);
+    });
+  });
+
+  describe('validate', () => {
+    const schema = createSchema({
+      o: _.record({ a: _.string() }),
+    });
+
+    test('errors contain unknown-keys error message', () => {
+      expect(schema.validate({ o: { a: '' }, x: 'reported', y: 'reported' })).toStrictEqual({
+        x: 'unknown-key',
+        y: 'unknown-key',
+      });
+      const errors = schema.validate({ o: { a: '', b: 42 }, x: 'reported' });
+      expect(errors).toStrictEqual({
+        x: 'unknown-key',
+        o: {
+          b: 'unknown-key',
+        },
+      });
+    });
+    test('handles eager validation', () => {
+      expect(schema.validate({ o: { a: '' }, x: 'reported', y: 'reported' }, true)).toStrictEqual({
+        x: 'unknown-key',
+      });
+      const errors = schema.validate({ o: { a: '', b: 42 }, x: 'reported' }, true);
+      expect(errors).toStrictEqual({
+        x: 'unknown-key',
+      });
+    });
+  });
+
+  test('is', () => {
     const schema = createSchema({
       opt: _.record({}, { optional: true }),
       list: _.list([_.string(), _.number()], { optional: true }),
@@ -185,16 +232,5 @@ describe('reports unknown keys', () => {
     expect(schema.is({ metadata: { propA: 'hello world' }, list: ['hello', 42, undefined] })).toBe(
       false
     );
-  });
-});
-
-describe('schema api', () => {
-  test('`is` returns false when passed incorrect data type', () => {
-    const s = createSchema({});
-    expect(s.is(undefined)).toBe(false);
-    expect(s.is(null)).toBe(false);
-    expect(s.is([])).toBe(false);
-
-    expect(s.is({})).toBe(true);
   });
 });

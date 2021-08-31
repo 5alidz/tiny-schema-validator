@@ -11,3 +11,4 @@ export const $union = 'union';
 export const TYPEERR = 'invalid-type';
 export const SCHEMAERR = 'invalid-schema';
 export const DATAERR = 'invalid-data';
+export const UNKOWN_KEY_ERR = 'unknown-key';
