@@ -114,23 +114,43 @@ All validators are accessible with the `_` (underscore) namespace; The reason fo
 
 ```js
 import { _ as validators } from 'tiny-schema-validator';
+```
 
-// NOTE: when you call a validator you just create an object with { type: '<type of validator>', ...options }
+Example of all validators and corresponding Typescript types:
+
+<!-- prettier-ignore -->
+```js
+import { _ } from 'tiny-schema-validator';
+
+// NOTE: when you call a validator you just create an object 
+// containing { type: '<type of validator>', ...options }
 // this is just a shorthand for that.
 
-// example of all validators and corresponding Typescript types
-validators.string(); // string
-validators.number(); // number
-validators.boolean(); // boolean
-validators.constant(42); // 42
-validators.union(validators.constant(1), validators.constant(2), validators.constant(3)); // 1 | 2 | 3
-validators.list([validators.number(), validators.number()]); // [number, number]
-validators.listof(validators.string()); // string[]
-validators.recordof(validators.string()); // Record<string, string>
-validators.record({
-  timestamp: validators.number(),
-  id: validators.string(),
+// simple validators.
+_.string(); // string
+_.number(); // number
+_.boolean(); // boolean
+_.constant(42); // 42
+
+// complex validators (types that accepts other types as paramater)
+_.union(
+  _.record({ id: _.string() }),
+  _.constant(1),
+  _.constant(2),
+  _.constant(3)
+); // { id: string; } | 1 | 2 | 3
+
+_.list([
+  _.number(),
+  _.string(),
+]); // [number, number]
+_.record({
+  timestamp: _.number(),
+  id: _.string(),
 }); // { timestamp: number; id: string; }
+
+_.listof(validators.string()); // string[]
+_.recordof(validators.string()); // Record<string, string>
 ```
 
 Check out the full validators API below:
