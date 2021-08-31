@@ -220,6 +220,24 @@ const Person = createSchema({
 });
 ```
 
+## Built-in Errors
+
+```js
+// when typeof value does not match the validator infered type
+const TYPEERR = 'invalid-type';
+
+// when "schema" in createSchema(schema) is not plain object
+const SCHEMAERR = 'invalid-schema';
+
+// when produce(data) and "data" failed to match the schema
+// always accompanied be TypeError, so make sure to catch it
+const DATAERR = 'invalid-data';
+
+// when an unknown key is found in data while using record | list
+// and any keys that exists on data and not present in the schema
+const UNKOWN_KEY_ERR = 'unknown-key';
+```
+
 ## Caveats
 
 - When using the `recordof | listof | list` validators, the optional property of the validator is ignored, example:
