@@ -149,8 +149,8 @@ _.record({
   id: _.string(),
 }); // { timestamp: number; id: string; }
 
-_.listof(validators.string()); // string[]
-_.recordof(validators.string()); // Record<string, string>
+_.listof(_.string()); // string[]
+_.recordof(_.string()); // Record<string, string>
 ```
 
 Check out the full validators API below:
